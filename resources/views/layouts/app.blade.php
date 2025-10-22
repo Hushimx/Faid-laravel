@@ -46,11 +46,11 @@
     <div class="page-main">
 
         <!-- app-Header -->
-        @include('layouts.header')
+        @include('layouts.partials.header')
         <!-- /app-Header -->
 
         <!--APP-SIDEBAR-->
-        @include('layouts.sidebar')
+        @include('layouts.partials.sidebar')
         <!--/APP-SIDEBAR-->
 
         <!--app-content open-->
@@ -74,7 +74,8 @@
                                             <li class="breadcrumb-item"><a
                                                     href="{{$crumb['url']}}">{{$crumb['name']}}</a></li>
                                         @else
-                                            <li class="breadcrumb-item active" aria-current="page">{{$crumb['name']}}</li>
+                                            <li class="breadcrumb-item active"
+                                                aria-current="page">{{$crumb['name']}}</li>
                                         @endif
                                     @endforeach
                                 </ol>
@@ -259,6 +260,9 @@
 
 <!-- Switcher js -->
 <script src="{{asset('assets/switcher/js/switcher.js')}}"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@include('layouts.partials.toast')
 
 </body>
 

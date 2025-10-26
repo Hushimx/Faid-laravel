@@ -17,6 +17,10 @@ return new class extends Migration {
             $table->enum('type', ['admin', 'user', 'vendor'])->default('user');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('profile_picture')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('address')->nullable();
+            $table->string('status')->default('active');
             $table->rememberToken();
             $table->timestamps();
         });

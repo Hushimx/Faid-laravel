@@ -18,6 +18,14 @@ Route::middleware(['auth'])->group(function () {
     // Logout Route
     Route::get('logout', [DashboardController::class, 'logout'])->name('logout');
 
+    // Profile Routes
+    Route::get('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'edit'])->name('profile.edit')->defaults('breadcrumbs', [
+        ['name' => 'Edit Profile']
+    ]);
+    Route::patch('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/password', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::patch('profile/picture', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePicture'])->name('profile.picture.update');
+
     // Dashboard Route
     Route::get('', [DashboardController::class, 'index'])->name('dashboard')->defaults('breadcrumbs', [
         ['name' => 'Dashboard']

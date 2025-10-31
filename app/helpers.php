@@ -1,10 +1,11 @@
 <?php
 
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Storage;
 
 if (!function_exists('HandleActiveSidebar')) {
     function handleActiveSidebar(array $routes)
@@ -119,5 +120,39 @@ if (!function_exists('uploadImage')) {
             Log::error('Image upload failed: ' . $e->getMessage());
             return null;
         }
+    }
+}
+
+if (!function_exists('locales')) {
+    function locales(): array
+    {
+        $code = DB::table('ltu_translations')->pluck('language_id');
+        $locales = DB::table('ltu_languages')
+            ->whereIn('id', $code)
+            ->select('name', 'code')
+            ->latest('id')
+            ->get()->toArray();
+        return $locales;
+    }
+}
+
+if (!function_exists('normalize_translations')) {
+    function normalize_translations(array $input, string $fullback = 'en'): array
+    {
+        $locales = array_map(fn($locale) => $locale->code, locales());
+
+        $filtered = array_intersect_key($input, array_flip($locales));
+
+        $base = $filtered[$fullback] ?? collect($filtered)->first(function ($value) {
+            return filled($value);
+        });
+
+        $result = [];
+
+        foreach ($locales as $locale) {
+            $result[$locale] = $filtered[$locale] ?? $base;
+        }
+
+        return $result;
     }
 }

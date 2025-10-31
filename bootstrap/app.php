@@ -22,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             ForceJson::class,
         ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLang::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $apiHandler = new \App\Exceptions\ApiExceptionHandler();

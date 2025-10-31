@@ -53,4 +53,12 @@ class User extends Authenticatable
             'updated_at' => 'datetime',
         ];
     }
+
+    /**
+     * The vendor profile associated with the user.
+     */
+    public function vendorProfile()
+    {
+        return $this->hasOne(VendorProfile::class);
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -19,5 +20,12 @@ class DashboardController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect()->route('login')->with('success', 'Logged out successfully');
+    }
+
+    public function lang()
+    {
+        App::setLocale('ar');
+        session(['lang' => 'ar']);
+        return redirect()->back();
     }
 }

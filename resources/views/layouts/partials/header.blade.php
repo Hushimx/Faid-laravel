@@ -17,7 +17,9 @@
                             <div class="d-flex country">
                                 <a class="nav-link icon text-center" data-bs-target="#country-selector"
                                     data-bs-toggle="modal">
-                                    <i class="fe fe-globe"></i><span class="fs-16 ms-2 d-none d-xl-block">English</span>
+                                    <i class="fe fe-globe"></i><span class="fs-16 ms-2 d-none d-xl-block">
+                                        {{ collect(locales())->where('code', app()->getLocale())->first()->name }}
+                                    </span>
                                 </a>
                             </div>
                             <!-- COUNTRY -->

@@ -27,6 +27,16 @@
                             class="side-menu__label">@lang('dashboard.users')</span></a>
                 </li>
                 <li class="slide">
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['countries.*']) }}" data-bs-toggle="slide"
+                        href="{{ route('countries.index') }}"><i class="side-menu__icon fe fe-flag"></i><span
+                            class="side-menu__label">@lang('dashboard.Countries')</span></a>
+                </li>
+                <li class="slide">
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['cities.*']) }}" data-bs-toggle="slide"
+                        href="{{ route('cities.index') }}"><i class="side-menu__icon fe fe-map-pin"></i><span
+                            class="side-menu__label">@lang('dashboard.Cities')</span></a>
+                </li>
+                <li class="slide">
                     <a class="side-menu__item" data-bs-toggle="slide" href="javascript:void(0)"><i
                             class="side-menu__icon fe fe-slack"></i><span
                             class="side-menu__label">@lang('dashboard.users')</span><i class="angle fe fe-chevron-right"></i>

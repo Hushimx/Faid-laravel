@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\City;
+use App\Models\Country;
 use App\Models\User;
+use App\Models\VendorProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -118,7 +121,10 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        return view('pages.users.edit', compact('user'));
+        $countries = Country::orderBy('name')->get();
+        $cities = City::orderBy('name')->get();
+        $user->load('vendorProfile');
+        return view('pages.users.edit', compact('user', 'countries', 'cities'));
     }
 
     /**
@@ -136,6 +142,21 @@ class UserController extends Controller
             'status' => ['required', 'string', 'in:active,inactive'],
             'profile_picture' => ['nullable', 'image'], // Max 1MB
         ]);
+
+        // Additional validation if vendor
+        $vendorValidated = [];
+        if ($request->input('type') === 'vendor') {
+            $vendorValidated = $request->validate([
+                'vendor.country_id' => ['nullable', 'exists:countries,id'],
+                'vendor.city_id' => ['nullable', 'exists:cities,id'],
+                'vendor.lat' => ['nullable', 'numeric', 'between:-90,90'],
+                'vendor.lng' => ['nullable', 'numeric', 'between:-180,180'],
+                'vendor.banner' => ['nullable', 'image'],
+                'vendor.bio' => ['nullable', 'string', 'max:255'],
+                // meta can be structured inputs (array) or an advanced JSON string
+                'vendor.meta' => ['nullable'],
+            ]);
+        }
 
         // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
@@ -161,6 +182,62 @@ class UserController extends Controller
         }
 
         $user->update($validated);
+
+        // Upsert vendor profile when type is vendor
+        if ($request->input('type') === 'vendor') {
+            $vendorData = [
+                'country_id' => data_get($vendorValidated, 'vendor.country_id'),
+                'city_id' => data_get($vendorValidated, 'vendor.city_id'),
+                'lat' => data_get($vendorValidated, 'vendor.lat'),
+                'lng' => data_get($vendorValidated, 'vendor.lng'),
+                'bio' => data_get($vendorValidated, 'vendor.bio'),
+                'meta' => null,
+            ];
+
+            // Normalize meta (accept array of fields or JSON string)
+            $metaInput = data_get($vendorValidated, 'vendor.meta');
+            if (!is_null($metaInput) && $metaInput !== '') {
+                if (is_array($metaInput)) {
+                    $normalized = $metaInput;
+                    // Normalize tags as array if provided as comma-separated string
+                    if (isset($normalized['tags']) && is_string($normalized['tags'])) {
+                        $tags = array_filter(array_map('trim', explode(',', $normalized['tags'])));
+                        $normalized['tags'] = array_values(array_unique($tags));
+                    }
+                    $vendorData['meta'] = $normalized;
+                } elseif (is_string($metaInput)) {
+                    $decoded = json_decode($metaInput, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $vendorData['meta'] = $decoded;
+                    } else {
+                        return back()
+                            ->withInput()
+                            ->withErrors(['vendor.meta' => 'Meta must be valid JSON']);
+                    }
+                }
+            }
+
+            // Handle vendor banner upload
+            if ($request->hasFile('vendor.banner')) {
+                $vendorData['banner'] = uploadImage(
+                    $request->file('vendor.banner'),
+                    'vendor-banners',
+                    ['width' => 1200, 'height' => 300],
+                    optional($user->vendorProfile)->banner
+                );
+
+                if (!$vendorData['banner']) {
+                    return back()
+                        ->withInput()
+                        ->with('error', 'Failed to upload vendor banner');
+                }
+            }
+
+            $user->vendorProfile()->updateOrCreate(
+                ['user_id' => $user->id],
+                $vendorData
+            );
+        }
 
         return redirect()
             ->route('users.index')

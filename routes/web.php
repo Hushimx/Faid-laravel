@@ -1,9 +1,35 @@
 <?php
 
+use App\Http\Controllers\Admin\CityController;
+use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LoginController;
 use App\Http\Controllers\Admin\UserController;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
+
+
+// Language Route
+Route::get('change-locale/{locale}', function ($locale) {
+    // verify locale exists in supported languages
+    try {
+        $allowed = collect(locales())->pluck('code')->toArray();
+    } catch (\Throwable $e) {
+        $allowed = ['en', 'ar'];
+    }
+    if (!in_array($locale, $allowed, true)) {
+        return redirect()->back();
+    }
+
+    // store in session for persistence
+    session()->put('locale', $locale);
+    session()->put('lang', $locale);
+    
+    // set for current request
+    App::setLocale($locale);
+    
+    return redirect()->back();
+})->name('change.locale');
 
 
 // Login Routes
@@ -31,6 +57,25 @@ Route::middleware(['auth'])->group(function () {
         ['name' => 'Dashboard']
     ]);
 
+    // Countries Routes
+    Route::prefix('countries')->name('countries.')->controller(CountryController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => 'Countries']
+        ]);
+        Route::post('/', 'store')->name('store');
+        Route::put('/{country}', 'update')->name('update');
+        Route::delete('/{country}', 'destroy')->name('destroy');
+    });
+
+    // Cities Routes
+    Route::prefix('cities')->name('cities.')->controller(CityController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => 'Cities']
+        ]);
+        Route::post('/', 'store')->name('store');
+        Route::put('/{city}', 'update')->name('update');
+        Route::delete('/{city}', 'destroy')->name('destroy');
+    });
     // Users Routes
     Route::prefix('users')->name('users.')->controller(UserController::class)->group(function () {
         Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [

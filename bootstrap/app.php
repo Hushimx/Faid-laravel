@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(append: [
             ForceJson::class,
+            \App\Http\Middleware\SetApiLocale::class,
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\SetLang::class,

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -24,10 +25,10 @@ Route::get('change-locale/{locale}', function ($locale) {
     // store in session for persistence
     session()->put('locale', $locale);
     session()->put('lang', $locale);
-    
+
     // set for current request
     App::setLocale($locale);
-    
+
     return redirect()->back();
 })->name('change.locale');
 
@@ -75,6 +76,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', 'store')->name('store');
         Route::put('/{city}', 'update')->name('update');
         Route::delete('/{city}', 'destroy')->name('destroy');
+    });
+
+    // Categories Routes
+    Route::prefix('categories')->name('categories.')->controller(CategoryController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => 'Categories']
+        ]);
+        Route::post('/', 'store')->name('store');
+        Route::put('/{category}', 'update')->name('update');
+        Route::delete('/{category}', 'destroy')->name('destroy');
     });
     // Users Routes
     Route::prefix('users')->name('users.')->controller(UserController::class)->group(function () {

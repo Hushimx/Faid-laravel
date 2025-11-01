@@ -27,14 +27,21 @@
                             class="side-menu__label">@lang('dashboard.users')</span></a>
                 </li>
                 <li class="slide">
-                    <a class="side-menu__item has-link {{ handleActiveSidebar(['countries.*']) }}" data-bs-toggle="slide"
-                        href="{{ route('countries.index') }}"><i class="side-menu__icon fe fe-flag"></i><span
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['countries.*']) }}"
+                        data-bs-toggle="slide" href="{{ route('countries.index') }}"><i
+                            class="side-menu__icon fe fe-flag"></i><span
                             class="side-menu__label">@lang('dashboard.Countries')</span></a>
                 </li>
                 <li class="slide">
                     <a class="side-menu__item has-link {{ handleActiveSidebar(['cities.*']) }}" data-bs-toggle="slide"
                         href="{{ route('cities.index') }}"><i class="side-menu__icon fe fe-map-pin"></i><span
                             class="side-menu__label">@lang('dashboard.Cities')</span></a>
+                </li>
+                <li class="slide">
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['categories.*']) }}"
+                        data-bs-toggle="slide" href="{{ route('categories.index') }}"><i
+                            class="side-menu__icon fe fe-tag"></i><span
+                            class="side-menu__label">@lang('dashboard.Categories')</span></a>
                 </li>
                 <li class="slide">
                     <a class="side-menu__item" data-bs-toggle="slide" href="javascript:void(0)"><i

@@ -7,6 +7,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -40,6 +41,8 @@ class AuthController extends Controller
             );
         }
 
+        $user->loadMissing(['vendorProfile.country', 'vendorProfile.city']);
+
         // Create token
         $deviceName = $request->userAgent() ?: 'unknown';
         $token = $user->createToken($deviceName)->plainTextToken;
@@ -59,8 +62,10 @@ class AuthController extends Controller
      */
     public function me(Request $request)
     {
+        $user = $request->user()->loadMissing(['vendorProfile.country', 'vendorProfile.city']);
+
         return ApiResponse::success(
-            new UserResource($request->user()),
+            new UserResource($user),
             'User data retrieved successfully'
         );
     }
@@ -72,7 +77,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        $validated = $request->validate([
+        $rules = [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'phone' => ['nullable', 'string', 'max:20'],
@@ -80,7 +85,23 @@ class AuthController extends Controller
             'profile_picture' => ['nullable', 'image'],
             'current_password' => ['required_with:new_password', 'nullable', 'string'],
             'new_password' => ['nullable', 'string', 'min:8', 'confirmed'],
-        ]);
+        ];
+
+        $shouldHandleVendor = $user->type === 'vendor';
+
+        if ($shouldHandleVendor) {
+            $rules = array_merge($rules, [
+                'vendor_profile.country_id' => ['nullable', 'exists:countries,id'],
+                'vendor_profile.city_id' => ['nullable', 'exists:cities,id'],
+                'vendor_profile.lat' => ['nullable', 'numeric', 'between:-90,90'],
+                'vendor_profile.lng' => ['nullable', 'numeric', 'between:-180,180'],
+                'vendor_profile.banner' => ['nullable', 'image'],
+                'vendor_profile.bio' => ['nullable', 'string', 'max:1000'],
+                'vendor_profile.meta' => ['nullable', 'array'],
+            ]);
+        }
+
+        $validated = $request->validate($rules);
 
         // Handle password change
         if (isset($validated['current_password'])) {
@@ -96,8 +117,18 @@ class AuthController extends Controller
             $validated['password'] = Hash::make($validated['new_password']);
         }
 
+        // Extract vendor profile data if provided
+        $vendorProfileData = $validated['vendor_profile'] ?? [];
+
+        if (isset($vendorProfileData['meta']) && is_string($vendorProfileData['meta'])) {
+            $decodedMeta = json_decode($vendorProfileData['meta'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $vendorProfileData['meta'] = $decodedMeta;
+            }
+        }
+
         // Remove unwanted fields from array
-        unset($validated['current_password'], $validated['new_password']);
+        unset($validated['current_password'], $validated['new_password'], $validated['vendor_profile']);
 
         // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
@@ -121,7 +152,36 @@ class AuthController extends Controller
             $validated['profile_picture'] = $path;
         }
 
+        if ($shouldHandleVendor && $request->hasFile('vendor_profile.banner')) {
+            $bannerPath = uploadImage(
+                $request->file('vendor_profile.banner'),
+                'vendor-banners',
+                [],
+                $user->vendorProfile?->banner
+            );
+
+            if (!$bannerPath) {
+                return ApiResponse::error(
+                    'Failed to upload vendor banner',
+                    [
+                        'vendor_profile.banner' => ['An error occurred while uploading the vendor banner.'],
+                    ],
+                    500
+                );
+            }
+
+            $vendorProfileData['banner'] = $bannerPath;
+        }
+
         $user->update($validated);
+
+        $shouldUpdateVendorProfile = $shouldHandleVendor && count($vendorProfileData) > 0;
+
+        if ($shouldUpdateVendorProfile) {
+            $user->vendorProfile()->updateOrCreate([], $vendorProfileData);
+        }
+
+        $user->loadMissing(['vendorProfile.country', 'vendorProfile.city']);
 
         return ApiResponse::success(
             new UserResource($user),
@@ -149,14 +209,42 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
             'profile_picture' => ['nullable', 'image'],
-        ]);
+            'type' => ['nullable', 'string', Rule::in(['user', 'vendor'])],
+        ];
+
+        $type = $request->input('type', 'user');
+
+        if ($type === 'vendor') {
+            $rules = array_merge($rules, [
+                'vendor_profile.country_id' => ['nullable', 'exists:countries,id'],
+                'vendor_profile.city_id' => ['nullable', 'exists:cities,id'],
+                'vendor_profile.lat' => ['nullable', 'numeric', 'between:-90,90'],
+                'vendor_profile.lng' => ['nullable', 'numeric', 'between:-180,180'],
+                'vendor_profile.banner' => ['nullable', 'image'],
+                'vendor_profile.bio' => ['nullable', 'string', 'max:1000'],
+                'vendor_profile.meta' => ['nullable', 'array'],
+            ]);
+        }
+
+        $validated = $request->validate($rules);
+
+        $vendorProfileData = $validated['vendor_profile'] ?? [];
+
+        if (isset($vendorProfileData['meta']) && is_string($vendorProfileData['meta'])) {
+            $decodedMeta = json_decode($vendorProfileData['meta'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $vendorProfileData['meta'] = $decodedMeta;
+            }
+        }
+
+        unset($validated['vendor_profile']);
 
         // Handle optional profile picture upload
         if ($request->hasFile('profile_picture')) {
@@ -173,11 +261,37 @@ class AuthController extends Controller
             $validated['profile_picture'] = $path;
         }
 
+        if ($type === 'vendor' && $request->hasFile('vendor_profile.banner')) {
+            $bannerPath = uploadImage(
+                $request->file('vendor_profile.banner'),
+                'vendor-banners'
+            );
+
+            if (!$bannerPath) {
+                return ApiResponse::error('Failed to upload vendor banner', [], 500);
+            }
+
+            $vendorProfileData['banner'] = $bannerPath;
+        }
+
+        $validated['type'] = $validated['type'] ?? $type ?? 'user';
+        $type = $validated['type'];
+
         // Hash password before creating
         $validated['password'] = Hash::make($validated['password']);
 
         try {
-            $user = User::create($validated);
+            $user = DB::transaction(function () use ($validated, $vendorProfileData, $type) {
+                $user = User::create($validated);
+
+                if ($type === 'vendor') {
+                    $user->vendorProfile()->updateOrCreate([], $vendorProfileData);
+                }
+
+                return $user;
+            });
+
+            $user->loadMissing(['vendorProfile.country', 'vendorProfile.city']);
 
             // Return created user with transformed data
             return ApiResponse::success(

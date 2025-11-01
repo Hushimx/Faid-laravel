@@ -73,4 +73,20 @@ class Category extends Model
             self::STATUS_INACTIVE,
         ];
     }
+
+    /**
+     * Services relation.
+     */
+    public function services()
+    {
+        return $this->hasMany(Service::class);
+    }
+
+    /**
+     * Products relation.
+     */
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
 }

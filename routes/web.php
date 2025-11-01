@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LoginController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
@@ -86,6 +88,42 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', 'store')->name('store');
         Route::put('/{category}', 'update')->name('update');
         Route::delete('/{category}', 'destroy')->name('destroy');
+    });
+
+    // Services Routes
+    Route::prefix('services')->name('services.')->controller(ServiceController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => 'Services']
+        ]);
+        Route::get('/{service}', 'show')->name('show')->defaults('breadcrumbs', [
+            ['name' => 'Services', 'url' => 'services.index'],
+            ['name' => 'View Service']
+        ]);
+        Route::get('/{service}/edit', 'edit')->name('edit')->defaults('breadcrumbs', [
+            ['name' => 'Services', 'url' => 'services.index'],
+            ['name' => 'Edit Service']
+        ]);
+        Route::put('/{service}', 'update')->name('update');
+        Route::post('/{service}/status', 'updateStatus')->name('status.update');
+        Route::delete('/{service}', 'destroy')->name('destroy');
+    });
+
+    // Products Routes
+    Route::prefix('products')->name('products.')->controller(ProductController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => 'Products']
+        ]);
+        Route::get('/{product}', 'show')->name('show')->defaults('breadcrumbs', [
+            ['name' => 'Products', 'url' => 'products.index'],
+            ['name' => 'View Product']
+        ]);
+        Route::get('/{product}/edit', 'edit')->name('edit')->defaults('breadcrumbs', [
+            ['name' => 'Products', 'url' => 'products.index'],
+            ['name' => 'Edit Product']
+        ]);
+        Route::put('/{product}', 'update')->name('update');
+        Route::post('/{product}/status', 'updateStatus')->name('status.update');
+        Route::delete('/{product}', 'destroy')->name('destroy');
     });
     // Users Routes
     Route::prefix('users')->name('users.')->controller(UserController::class)->group(function () {

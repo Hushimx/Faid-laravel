@@ -44,6 +44,18 @@
                             class="side-menu__label">@lang('dashboard.Categories')</span></a>
                 </li>
                 <li class="slide">
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['services.*']) }}"
+                        data-bs-toggle="slide" href="{{ route('services.index') }}"><i
+                            class="side-menu__icon fe fe-settings"></i><span
+                            class="side-menu__label">@lang('dashboard.Services')</span></a>
+                </li>
+                <li class="slide">
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['products.*']) }}"
+                        data-bs-toggle="slide" href="{{ route('products.index') }}"><i
+                            class="side-menu__icon fe fe-package"></i><span
+                            class="side-menu__label">@lang('dashboard.Products')</span></a>
+                </li>
+                <li class="slide">
                     <a class="side-menu__item" data-bs-toggle="slide" href="javascript:void(0)"><i
                             class="side-menu__icon fe fe-slack"></i><span
                             class="side-menu__label">@lang('dashboard.users')</span><i class="angle fe fe-chevron-right"></i>

@@ -6,7 +6,10 @@ use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LoginController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\TicketController;
+use App\Http\Controllers\Admin\TicketMessageController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
@@ -57,7 +60,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard Route
     Route::get('', [DashboardController::class, 'index'])->name('dashboard')->defaults('breadcrumbs', [
-        ['name' => 'Dashboard']
+        ['name' => __('dashboard.dashboard')]
     ]);
 
     // Countries Routes
@@ -127,19 +130,74 @@ Route::middleware(['auth'])->group(function () {
     });
     // Users Routes
     Route::prefix('users')->name('users.')->controller(UserController::class)->group(function () {
-        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+        Route::get('/all', 'index')->name('all')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.users')],
+            ['name' => 'All Users']
+        ]);
+        Route::get('/admins', 'admins')->name('admins')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.users')],
+            ['name' => 'Admins Management']
+        ]);
+        Route::get('/users', 'users')->name('users')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.users')],
             ['name' => 'Users Management']
         ]);
+        Route::get('/vendors', 'vendors')->name('vendors')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.users')],
+            ['name' => 'Vendors Management']
+        ]);
         Route::get('/create', 'create')->name('create')->defaults('breadcrumbs', [
-            ['name' => 'Users Management', 'url' => 'users.index'],
+            ['name' => __('dashboard.users')],
+            ['name' => 'Users Management', 'url' => 'users.all'],
             ['name' => 'Create User']
         ]);
         Route::post('/', 'store')->name('store');
         Route::get('/{user}/edit', 'edit')->name('edit')->defaults('breadcrumbs', [
-            ['name' => 'Users Management', 'url' => 'users.index'],
+            ['name' => 'Users Management', 'url' => 'users.all'],
             ['name' => 'Edit User']
         ]);
         Route::put('/{user}', 'update')->name('update');
         Route::delete('/{user}', 'destroy')->name('destroy');
+    });
+
+    // Roles Routes
+    Route::prefix('roles')->name('roles.')->controller(RoleController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.users')],
+            ['name' => 'Roles Management']
+        ]);
+        Route::get('/create', 'create')->name('create')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.users')],
+            ['name' => 'Roles Management', 'url' => 'roles.index'],
+            ['name' => 'Create Role']
+        ]);
+        Route::post('/', 'store')->name('store');
+        Route::get('/{role}/edit', 'edit')->name('edit')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.users')],
+            ['name' => 'Roles Management', 'url' => 'roles.index'],
+            ['name' => 'Edit Role']
+        ]);
+        Route::put('/{role}', 'update')->name('update');
+        Route::delete('/{role}', 'destroy')->name('destroy');
+    });
+
+    // Tickets Routes (Admin only)
+    Route::prefix('tickets')->name('tickets.')->controller(TicketController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.Tickets')]
+        ]);
+        Route::get('/{ticket}', 'show')->name('show')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.Tickets'), 'url' => 'tickets.index'],
+            ['name' => __('dashboard.Ticket')]
+        ]);
+        Route::put('/{ticket}', 'update')->name('update');
+        Route::delete('/{ticket}', 'destroy')->name('destroy');
+    });
+
+    // Ticket Messages Routes
+    Route::prefix('ticket-messages')->name('ticket-messages.')->controller(TicketMessageController::class)->group(function () {
+        Route::get('/ticket/{ticket}', 'index')->name('index');
+        Route::post('/ticket/{ticket}', 'store')->name('store');
+        Route::post('/ticket/{ticket}/mark-read', 'markAsRead')->name('mark-read');
     });
 });

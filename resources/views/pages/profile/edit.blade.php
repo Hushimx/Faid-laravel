@@ -6,7 +6,7 @@
     <div class="container-fluid">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Edit Profile: {{ $user->name }}</h5>
+                <h5 class="mb-0">Edit Profile: {{ $user->first_name }} {{ $user->last_name }}</h5>
             </div>
             <div class="card-body">
 
@@ -23,11 +23,21 @@
                                     @method('PATCH')
 
                                     <div class="mb-3">
-                                        <label for="name" class="form-label">Name</label>
-                                        <input type="text" name="name" id="name"
-                                            class="form-control @error('name') is-invalid @enderror"
-                                            value="{{ old('name', $user->name) }}" required>
-                                        @error('name')
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        <input type="text" name="first_name" id="first_name"
+                                            class="form-control @error('first_name') is-invalid @enderror"
+                                            value="{{ old('first_name', $user->first_name) }}" required>
+                                        @error('first_name')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        <input type="text" name="last_name" id="last_name"
+                                            class="form-control @error('last_name') is-invalid @enderror"
+                                            value="{{ old('last_name', $user->last_name) }}" required>
+                                        @error('last_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -121,7 +131,7 @@
                                         <div
                                             style="width:200px;height:200px;overflow:hidden;border-radius:8px;background:#f8f9fa;margin:auto;">
                                             <img src="{{ Storage::url($user->profile_picture) }}"
-                                                alt="{{ $user->name }}" style="width:100%;height:100%;object-fit:cover;">
+                                                alt="{{ $user->first_name }} {{ $user->last_name }}" style="width:100%;height:100%;object-fit:cover;">
                                         </div>
                                     </div>
                                 @endif

@@ -103,7 +103,7 @@
                                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                                     <div class="drop-heading">
                                         <div class="text-center">
-                                            <h5 class="text-dark mb-0 fs-14 fw-semibold">{{ auth()->user()->name }}</h5>
+                                            <h5 class="text-dark mb-0 fs-14 fw-semibold">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</h5>
                                             <small class="text-muted">{{ auth()->user()->email }}</small>
                                         </div>
                                     </div>

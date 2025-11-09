@@ -78,7 +78,8 @@ class AuthController extends Controller
         $user = $request->user();
 
         $rules = [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'first_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'last_name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
@@ -210,12 +211,10 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'profile_picture' => ['nullable', 'image'],
             'type' => ['nullable', 'string', Rule::in(['user', 'vendor'])],
         ];
 
@@ -246,21 +245,6 @@ class AuthController extends Controller
 
         unset($validated['vendor_profile']);
 
-        // Handle optional profile picture upload
-        if ($request->hasFile('profile_picture')) {
-            $path = uploadImage(
-                $request->file('profile_picture'),
-                'profile-pictures',
-                ['width' => 300, 'height' => 300]
-            );
-
-            if (!$path) {
-                return ApiResponse::error('Failed to upload profile picture', [], 500);
-            }
-
-            $validated['profile_picture'] = $path;
-        }
-
         if ($type === 'vendor' && $request->hasFile('vendor_profile.banner')) {
             $bannerPath = uploadImage(
                 $request->file('vendor_profile.banner'),
@@ -276,6 +260,7 @@ class AuthController extends Controller
 
         $validated['type'] = $validated['type'] ?? $type ?? 'user';
         $type = $validated['type'];
+        $validated['status'] = $validated['status'] ?? 'active';
 
         // Hash password before creating
         $validated['password'] = Hash::make($validated['password']);

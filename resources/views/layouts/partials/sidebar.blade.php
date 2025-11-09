@@ -22,10 +22,29 @@
                             class="side-menu__label">@lang('dashboard.dashboard')</span></a>
                 </li>
                 <li class="slide">
+                    <a class="side-menu__item {{ handleActiveSidebar(['users.*']) }}" data-bs-toggle="slide"
+                        href="javascript:void(0)"><i class="side-menu__icon fe fe-users"></i><span
+                            class="side-menu__label">@lang('dashboard.users')</span><i class="angle fe fe-chevron-right"></i>
+                    </a>
+                    <ul class="slide-menu">
+                        <li><a href="{{ route('users.all') }}"
+                                class="slide-item {{ handleActiveSidebar(['users.all']) }}">@lang('dashboard.All')</a></li>
+                        <li><a href="{{ route('users.users') }}"
+                                class="slide-item {{ handleActiveSidebar(['users.users']) }}">@lang('dashboard.users')</a>
+                        </li>
+                        <li><a href="{{ route('users.vendors') }}"
+                                class="slide-item {{ handleActiveSidebar(['users.vendors']) }}">@lang('dashboard.vendors')</a>
+                        </li>
+                        <li><a href="{{ route('users.admins') }}"
+                                class="slide-item {{ handleActiveSidebar(['users.admins']) }}">@lang('dashboard.admins')</a>
+                        </li>
+                    </ul>
+                </li>
+                {{-- <li class="slide">
                     <a class="side-menu__item has-link {{ handleActiveSidebar(['users.*']) }}" data-bs-toggle="slide"
                         href="{{ route('users.index') }}"><i class="side-menu__icon fe fe-users"></i><span
                             class="side-menu__label">@lang('dashboard.users')</span></a>
-                </li>
+                </li> --}}
                 <li class="slide">
                     <a class="side-menu__item has-link {{ handleActiveSidebar(['countries.*']) }}"
                         data-bs-toggle="slide" href="{{ route('countries.index') }}"><i
@@ -55,25 +74,24 @@
                             class="side-menu__icon fe fe-package"></i><span
                             class="side-menu__label">@lang('dashboard.Products')</span></a>
                 </li>
+                @can('roles.view')
+                    <li class="slide">
+                        <a class="side-menu__item has-link {{ handleActiveSidebar(['roles.*']) }}" data-bs-toggle="slide"
+                            href="{{ route('roles.index') }}"><i class="side-menu__icon fe fe-shield"></i><span
+                                class="side-menu__label">@lang('dashboard.Roles')</span></a>
+                    </li>
+                @endcan
+                @if(auth()->user()->type === 'admin')
+                    <li class="slide">
+                        <a class="side-menu__item has-link {{ handleActiveSidebar(['tickets.*']) }}" data-bs-toggle="slide"
+                            href="{{ route('tickets.index') }}"><i class="side-menu__icon fe fe-ticket"></i><span
+                                class="side-menu__label">@lang('dashboard.Tickets')</span></a>
+                    </li>
+                @endif
                 <li class="slide">
-                    <a class="side-menu__item" data-bs-toggle="slide" href="javascript:void(0)"><i
-                            class="side-menu__icon fe fe-slack"></i><span
-                            class="side-menu__label">@lang('dashboard.users')</span><i class="angle fe fe-chevron-right"></i>
-                    </a>
-                    <ul class="slide-menu">
-                        <li class="panel sidetab-menu">
-                            <div class="panel-body tabs-menu-body p-0 border-0">
-                                <div class="tab-content">
-                                    <div class="tab-pane" id="side1">
-                                        <ul class="sidemenu-list">
-                                            <li><a href="cards.html" class="slide-item"> @lang('dashboard.users')</a>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
+                    <a class="side-menu__item has-link" data-bs-toggle="slide" href="{{ url('translations') }}"
+                        target="_blank"><i class="side-menu__icon fa fa-language"></i><span
+                            class="side-menu__label">@lang('dashboard.translations')</span></a>
                 </li>
             </ul>
 

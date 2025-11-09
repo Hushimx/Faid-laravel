@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\TicketController;
+use App\Http\Controllers\Api\TicketMessageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -56,4 +58,20 @@ Route::controller(ProductController::class)->group(function () {
         Route::put('products/{product}', 'update');
         Route::delete('products/{product}', 'destroy');
     });
+});
+
+// Tickets Routes (for users and vendors)
+Route::middleware('auth:sanctum')->controller(TicketController::class)->group(function () {
+    Route::get('tickets', 'index');
+    Route::post('tickets', 'store');
+    Route::get('tickets/{ticket}', 'show');
+    Route::put('tickets/{ticket}', 'update');
+    Route::delete('tickets/{ticket}', 'destroy');
+});
+
+// Ticket Messages Routes
+Route::middleware('auth:sanctum')->controller(TicketMessageController::class)->group(function () {
+    Route::get('tickets/{ticket}/messages', 'index');
+    Route::post('tickets/{ticket}/messages', 'store');
+    Route::post('tickets/{ticket}/messages/mark-read', 'markAsRead');
 });

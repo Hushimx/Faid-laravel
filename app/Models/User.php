@@ -29,7 +29,10 @@ class User extends Authenticatable
         'profile_picture',
         'phone',
         'address',
-        'status'
+        'status',
+        'otp',
+        'otp_expires_at',
+        'email_verified_at',
     ];
 
     /**

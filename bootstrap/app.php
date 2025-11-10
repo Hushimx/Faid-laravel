@@ -1,14 +1,16 @@
 <?php
 
-use App\Http\Middleware\ForceJson;
 use App\Support\ApiResponse;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Http\Middleware\ForceJson;
+use App\Http\Middleware\SetApiLocale;
 use Illuminate\Foundation\Application;
+use App\Http\Middleware\EnsureVerifiedUser;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -21,10 +23,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(append: [
             ForceJson::class,
-            \App\Http\Middleware\SetApiLocale::class,
+            SetApiLocale::class,
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\SetLang::class,
+        ]);
+        $middleware->alias([
+            'ensure-verified-user' => EnsureVerifiedUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

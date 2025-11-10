@@ -21,7 +21,7 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('verify-otp', 'verifyOtp');
 
     // Protected routes
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'ensure-verified-user'])->group(function () {
         Route::get('me', 'me');
         Route::post('update', 'update');
         Route::post('logout', 'logout');
@@ -43,7 +43,7 @@ Route::controller(ServiceController::class)->group(function () {
     Route::get('services/{service}', 'show');
 
     // Vendor routes only (authenticated vendors)
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'ensure-verified-user'])->group(function () {
         Route::post('services', 'store');
         Route::put('services/{service}', 'update');
         Route::delete('services/{service}', 'destroy');
@@ -57,7 +57,7 @@ Route::controller(ProductController::class)->group(function () {
     Route::get('products/{product}', 'show');
 
     // Vendor routes only (authenticated vendors)
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'ensure-verified-user'])->group(function () {
         Route::post('products', 'store');
         Route::put('products/{product}', 'update');
         Route::delete('products/{product}', 'destroy');
@@ -65,7 +65,7 @@ Route::controller(ProductController::class)->group(function () {
 });
 
 // Tickets Routes (for users and vendors)
-Route::middleware('auth:sanctum')->controller(TicketController::class)->group(function () {
+Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(TicketController::class)->group(function () {
     Route::get('tickets', 'index');
     Route::post('tickets', 'store');
     Route::get('tickets/{ticket}', 'show');
@@ -74,7 +74,7 @@ Route::middleware('auth:sanctum')->controller(TicketController::class)->group(fu
 });
 
 // Ticket Messages Routes
-Route::middleware('auth:sanctum')->controller(TicketMessageController::class)->group(function () {
+Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(TicketMessageController::class)->group(function () {
     Route::get('tickets/{ticket}/messages', 'index');
     Route::post('tickets/{ticket}/messages', 'store');
     Route::post('tickets/{ticket}/messages/mark-read', 'markAsRead');

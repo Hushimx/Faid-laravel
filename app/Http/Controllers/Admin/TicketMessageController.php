@@ -12,22 +12,11 @@ use Illuminate\Support\Facades\Storage;
 
 class TicketMessageController extends Controller
 {
-    public function __construct()
-    {
-        // Allow only admins to access ticket messages from dashboard
-        $this->middleware(function ($request, $next) {
-            $user = Auth::user();
-            if ($user->type !== 'admin') {
-                abort(403, 'Unauthorized access');
-            }
-            return $next($request);
-        });
-    }
 
     /**
      * Store a new message for a ticket.
      */
-    public function store(Request $request, Ticket $ticket): JsonResponse
+    public function store(Request $request, Ticket $ticket)
     {
         $user = Auth::user();
         
@@ -65,23 +54,7 @@ class TicketMessageController extends Controller
         // Load user relationship for response
         $message->load('user');
         
-        return response()->json([
-            'success' => true,
-            'message' => __('dashboard.Message sent successfully'),
-            'data' => [
-                'id' => $message->id,
-                'message' => $message->message,
-                'attachment' => $message->attachment ? Storage::url($message->attachment) : null,
-                'user' => [
-                    'id' => $message->user->id,
-                    'name' => $message->user->first_name . ' ' . $message->user->last_name,
-                    'type' => $message->user->type,
-                    'profile_picture' => $message->user->profile_picture ? Storage::url($message->user->profile_picture) : null,
-                ],
-                'created_at' => $message->created_at->format('Y-m-d H:i:s'),
-                'created_at_human' => $message->created_at->diffForHumans(),
-            ],
-        ]);
+        return back();
     }
 
     /**

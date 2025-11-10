@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Mail\SendOtp;
 use App\Models\User;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
@@ -288,5 +290,62 @@ class AuthController extends Controller
             report($e);
             return ApiResponse::error('Failed to create account', [], 500);
         }
+    }
+
+    public function sendOtp(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'string', 'email', 'exists:users,email', 'max:255'],
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return ApiResponse::error('User not found', [], 404);
+        }
+
+        $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+        $user->otp = $otp;
+        $user->otp_expires_at = now()->addMinutes(10);
+        $user->save();
+
+        // Send OTP via email
+        try {
+            Mail::to($user->email)->send(new SendOtp($user, $otp));
+        } catch (\Exception $e) {
+            report($e);
+            return ApiResponse::error('Failed to send OTP email', [], 500);
+        }
+
+        return ApiResponse::success([], 'OTP sent successfully');
+    }
+
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'string', 'email', 'exists:users,email', 'max:255'],
+            'otp' => ['required', 'string', 'max:6'],
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return ApiResponse::error('User not found', [], 404);
+        }
+
+        if ($user->otp !== $request->otp) {
+            return ApiResponse::error('Invalid OTP', [], 400);
+        }
+
+        if ($user->otp_expires_at < now()) {
+            return ApiResponse::error('OTP expired', [], 400);
+        }
+
+        $user->otp = null;
+        $user->otp_expires_at = null;
+        $user->email_verified_at = now();
+        $user->save();
+
+        return ApiResponse::success([], 'OTP verified successfully');
     }
 }

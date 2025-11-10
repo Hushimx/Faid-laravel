@@ -16,6 +16,10 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('register', 'register');
     Route::post('login', 'login');
 
+    // OTP routes
+    Route::post('send-otp', 'sendOtp');
+    Route::post('verify-otp', 'verifyOtp');
+
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', 'me');

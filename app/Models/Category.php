@@ -24,7 +24,6 @@ class Category extends Model
         'description',
         'image',
         'status',
-        'parent_id',
     ];
 
     /**
@@ -36,22 +35,6 @@ class Category extends Model
         'name',
         'description',
     ];
-
-    /**
-     * Parent category relation.
-     */
-    public function parent(): BelongsTo
-    {
-        return $this->belongsTo(self::class, 'parent_id');
-    }
-
-    /**
-     * Child categories relation.
-     */
-    public function children(): HasMany
-    {
-        return $this->hasMany(self::class, 'parent_id');
-    }
 
     /**
      * Determine if the category is active.

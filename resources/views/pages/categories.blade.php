@@ -81,18 +81,7 @@
                 </div>
 
                 <div class="col-xl-3 col-lg-3 col-md-6">
-                    <label for="parent_id" class="form-label">@lang('dashboard.Parent Category')</label>
-                    <select name="parent_id" id="parent_id" class="form-select select2">
-                        <option value="" @selected(!$filters['parent_id'])>@lang('dashboard.All Parents')</option>
-                        @foreach ($availableParents as $parentOption)
-                            <option value="{{ $parentOption->id }}" @selected($filters['parent_id'] === $parentOption->id)>
-                                {{ $parentOption->name }}
-                                @if ($parentOption->parent)
-                                    - {{ $parentOption->parent->name }}
-                                @endif
-                            </option>
-                        @endforeach
-                    </select>
+                    <!-- Parent category removed - flat categories only -->
                 </div>
 
                 <div class="col-xl-1 col-lg-2 col-md-3">
@@ -136,7 +125,7 @@
                             <th class="ps-4">#</th>
                             <th>@lang('dashboard.Image')</th>
                             <th>@lang('dashboard.Name')</th>
-                            <th>@lang('dashboard.Parent Category')</th>
+                            <!-- Parent Category column removed -->
                             <th>@lang('dashboard.Status')</th>
                             <th>@lang('dashboard.Created At')</th>
                             <th class="text-end pe-4">@lang('dashboard.Actions')</th>
@@ -171,11 +160,7 @@
                                         <div class="text-muted small">{{ Str::limit($description, 80) }}</div>
                                     @endif
                                 </td>
-                                <td>
-                                    <span class="badge bg-secondary-transparent text-secondary">
-                                        {{ $category->parent?->name ?? __('dashboard.Root Category') }}
-                                    </span>
-                                </td>
+                                <!-- Parent column removed - flat categories only -->
                                 <td>
                                     <span
                                         class="badge {{ $category->isActive() ? 'bg-success-transparent text-success' : 'bg-danger-transparent text-danger' }}">
@@ -244,22 +229,6 @@
                                                 </div>
 
                                                 <div class="row g-3">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label" for="edit-parent-{{ $category->id }}">
-                                                            @lang('dashboard.Parent Category')
-                                                        </label>
-                                                        <select class="form-select select2"
-                                                            id="edit-parent-{{ $category->id }}" name="parent_id">
-                                                            <option value="">@lang('dashboard.No Parent')</option>
-                                                            @foreach ($availableParents as $parentOption)
-                                                                @continue($parentOption->id === $category->id)
-                                                                <option value="{{ $parentOption->id }}"
-                                                                    @selected($category->parent_id === $parentOption->id)>
-                                                                    {{ $parentOption->name }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label" for="edit-status-{{ $category->id }}">
                                                             @lang('dashboard.Status')
@@ -403,17 +372,6 @@
                         </div>
 
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label" for="create-parent">
-                                    @lang('dashboard.Parent Category')
-                                </label>
-                                <select class="form-select select2" id="create-parent" name="parent_id">
-                                    <option value="">@lang('dashboard.No Parent')</option>
-                                    @foreach ($availableParents as $parentOption)
-                                        <option value="{{ $parentOption->id }}">{{ $parentOption->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
                             <div class="col-md-6">
                                 <label class="form-label" for="create-status">@lang('dashboard.Status')</label>
                                 <select class="form-select" id="create-status" name="status" required>

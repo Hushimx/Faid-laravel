@@ -249,7 +249,6 @@ return [
     'Search tickets placeholder' => 'Search by subject or description...',
     'New Ticket' => 'New Ticket',
     'Subject' => 'Subject',
-    'Description' => 'Description',
     'Priority' => 'Priority',
     'Low' => 'Low',
     'Medium' => 'Medium',
@@ -295,4 +294,8 @@ return [
     'Email Footer Message' => 'Email Footer Message',
     'All rights reserved' => 'All rights reserved',
     'OTP Email Message' => 'OTP Email Message',
+    'Offers' => 'Offers',
+    'Create New Offer' => 'Create New Offer',
+    'Create' => 'Create',
+    'Edit Offer' => 'Edit Offer',
 ];

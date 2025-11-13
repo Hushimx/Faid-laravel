@@ -19,7 +19,6 @@ class CategoryController extends Controller
     $filters = [
       'search' => $request->string('search')->toString(),
       'status' => $request->string('status')->toString(),
-      'parent_id' => $request->integer('parent_id'),
       'per_page' => $request->integer('per_page', 12),
     ];
 
@@ -28,10 +27,7 @@ class CategoryController extends Controller
       $filters['per_page'] = 12;
     }
 
-    $categoriesQuery = Category::query()
-      ->with(['parent'])
-      ->withCount('children')
-      ->latest();
+    $categoriesQuery = Category::query()->latest();
 
     if ($filters['search']) {
       $locale = app()->getLocale();
@@ -46,16 +42,7 @@ class CategoryController extends Controller
       $categoriesQuery->where('status', $filters['status']);
     }
 
-    if ($filters['parent_id']) {
-      $categoriesQuery->where('parent_id', $filters['parent_id']);
-    }
-
     $categories = $categoriesQuery->paginate($filters['per_page'])->withQueryString();
-
-    $availableParents = Category::with('parent')
-      ->orderByRaw('parent_id IS NULL DESC')
-      ->orderBy("name->" . app()->getLocale())
-      ->get();
 
     $stats = [
       'total' => Category::count(),
@@ -63,7 +50,7 @@ class CategoryController extends Controller
       'inactive' => Category::where('status', Category::STATUS_INACTIVE)->count(),
     ];
 
-    return view('pages.categories', compact('categories', 'availableParents', 'stats', 'filters', 'perPageOptions'));
+    return view('pages.categories', compact('categories', 'stats', 'filters', 'perPageOptions'));
   }
 
   /**
@@ -77,7 +64,7 @@ class CategoryController extends Controller
     $category->name = normalize_translations($request->input('name'));
     $category->description = $this->normalizeOptionalTranslations($request->input('description'));
     $category->status = $data['status'];
-    $category->parent_id = $data['parent_id'];
+    // parent_id removed - flat categories only
 
     if ($request->hasFile('image')) {
       $path = uploadImage($request->file('image'), 'categories', ['width' => 600, 'height' => 600]);
@@ -101,26 +88,10 @@ class CategoryController extends Controller
   public function update(Request $request, Category $category): RedirectResponse
   {
     $data = $this->validateData($request, (int) $category->id);
-
-    if ($data['parent_id']) {
-      $newParent = Category::find($data['parent_id']);
-
-      if ($newParent) {
-        $current = $newParent;
-        while ($current) {
-          if ($current->id === $category->id) {
-            return redirect()->back()->withInput($request->except('image'))
-              ->with('error', __('dashboard.Category parent loop error'));
-          }
-          $current = $current->parent;
-        }
-      }
-    }
-
     $category->name = normalize_translations($request->input('name'));
     $category->description = $this->normalizeOptionalTranslations($request->input('description'));
     $category->status = $data['status'];
-    $category->parent_id = $data['parent_id'];
+    // parent_id removed - flat categories only
 
     if ($request->hasFile('image')) {
       $path = uploadImage($request->file('image'), 'categories', ['width' => 600, 'height' => 600], $category->image);
@@ -143,10 +114,6 @@ class CategoryController extends Controller
    */
   public function destroy(Category $category): RedirectResponse
   {
-    if ($category->children()->exists()) {
-      return redirect()->back()->with('error', __('dashboard.Category delete has children'));
-    }
-
     if ($category->image) {
       deleteFile($category->image);
     }
@@ -168,17 +135,10 @@ class CategoryController extends Controller
       'description' => ['nullable', 'array'],
       'description.*' => ['nullable', 'string', 'max:1000'],
       'status' => ['required', Rule::in(Category::statuses())],
-      'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
       'image' => ['nullable', 'image', 'max:3072'],
     ];
 
-    if ($categoryId) {
-      $rules['parent_id'][] = Rule::notIn([$categoryId]);
-    }
-
     $data = $request->validate($rules);
-
-    $data['parent_id'] = $data['parent_id'] ?? null;
 
     return $data;
   }

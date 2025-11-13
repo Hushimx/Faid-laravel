@@ -54,8 +54,6 @@ class DashboardController extends Controller
             'total' => Category::count(),
             'active' => Category::where('status', Category::STATUS_ACTIVE)->count(),
             'inactive' => Category::where('status', Category::STATUS_INACTIVE)->count(),
-            'root' => Category::whereNull('parent_id')->count(),
-            'sub' => Category::whereNotNull('parent_id')->count(),
         ];
 
         // Countries & Cities Statistics

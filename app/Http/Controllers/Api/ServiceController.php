@@ -30,6 +30,7 @@ class ServiceController extends Controller
       'price_min' => $request->has('price_min') ? (float) $request->input('price_min') : null,
       'price_max' => $request->has('price_max') ? (float) $request->input('price_max') : null,
       'per_page' => $request->integer('per_page', 15),
+      'include_media' => $request->boolean('include_media', false),
     ];
 
     $query = Service::query()

@@ -135,14 +135,7 @@
                             <small class="text-muted d-block">@lang('dashboard.Inactive')</small>
                             <p class="mb-0 fw-semibold text-muted">{{ $categoriesStats['inactive'] }}</p>
                         </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">@lang('dashboard.Root Categories')</small>
-                            <p class="mb-0 fw-semibold text-info">{{ $categoriesStats['root'] }}</p>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">@lang('dashboard.Sub Categories')</small>
-                            <p class="mb-0 fw-semibold text-secondary">{{ $categoriesStats['sub'] }}</p>
-                        </div>
+                        <!-- Root/Sub category breakdown removed -->
                     </div>
                 </div>
             </div>

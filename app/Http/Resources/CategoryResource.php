@@ -20,18 +20,6 @@ class CategoryResource extends JsonResource
       'name' => $this->name,
       'description' => $this->description,
       'image_url' => $this->image ? url(Storage::url($this->image)) : null,
-      'parent_id' => $this->parent_id,
-      'parent' => $this->when(
-        $this->relationLoaded('parent') && $this->parent !== null,
-        function () {
-          return [
-            'id' => $this->parent->id,
-            'name' => $this->parent->name,
-          ];
-        }
-      ),
-      'children_count' => $this->whenCounted('children'),
-      'children' => CategoryResource::collection($this->whenLoaded('children')),
       'created_at' => optional($this->created_at)->format('Y-m-d H:i:s'),
       'updated_at' => optional($this->updated_at)->format('Y-m-d H:i:s'),
     ];

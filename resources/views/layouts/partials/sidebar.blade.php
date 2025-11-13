@@ -81,13 +81,16 @@
                                 class="side-menu__label">@lang('dashboard.Roles')</span></a>
                     </li>
                 @endcan
-                @if(auth()->user()->type === 'admin')
-                    <li class="slide">
-                        <a class="side-menu__item has-link {{ handleActiveSidebar(['tickets.*']) }}" data-bs-toggle="slide"
-                            href="{{ route('tickets.index') }}"><i class="side-menu__icon fe fe-ticket"></i><span
-                                class="side-menu__label">@lang('dashboard.Tickets')</span></a>
-                    </li>
-                @endif
+                <li class="slide">
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['tickets.*']) }}" data-bs-toggle="slide"
+                        href="{{ route('tickets.index') }}"><i class="side-menu__icon fa fa-ticket"></i><span
+                            class="side-menu__label">@lang('dashboard.Tickets')</span></a>
+                </li>
+                <li class="slide">
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['offers.*']) }}" data-bs-toggle="slide"
+                        href="{{ route('offers.index') }}"><i class="side-menu__icon fa fa-gift"></i><span
+                            class="side-menu__label">@lang('dashboard.Offers')</span></a>
+                </li>
                 <li class="slide">
                     <a class="side-menu__item has-link" data-bs-toggle="slide" href="{{ url('translations') }}"
                         target="_blank"><i class="side-menu__icon fa fa-language"></i><span

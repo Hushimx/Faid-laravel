@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\TicketController;
 use App\Http\Controllers\Admin\TicketMessageController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 
 
@@ -200,4 +202,28 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/ticket/{ticket}', 'store')->name('store');
         Route::post('/ticket/{ticket}/mark-read', 'markAsRead')->name('mark-read');
     });
+
+    // Offers (Admin)
+    Route::prefix('offers')->name('offers.')->controller(\App\Http\Controllers\Admin\OfferController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{offer}', 'update')->name('update');
+        Route::delete('/{offer}', 'destroy')->name('destroy');
+    });
 });
+
+
+Route::get('wa', function () {
+
+    $access_token = env('WHATSAPP_ACCESS_TOKEN');
+    $create_instance_url = 'https://whatsapp.myjarak.com/api/create_instance?access_token=' . $access_token;
+    // return $create_instance_url;
+    // dd($create_instance_url);
+    $Instance = Http::post($create_instance_url);
+    dd($Instance->json());
+
+    // return $Instance->body();
+});
+
+
+Broadcast::routes();

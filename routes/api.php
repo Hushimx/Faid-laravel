@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\TicketMessageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\OfferController;
 
 
 
@@ -28,11 +29,12 @@ Route::controller(AuthController::class)->group(function () {
     });
 });
 
+// Public offers
+Route::get('/offers', [OfferController::class, 'index']);
+
 // Categories Routes (Public - Read-only, Active categories only)
 Route::controller(CategoryController::class)->group(function () {
     Route::get('categories', 'index');
-    Route::get('categories/tree', 'tree');
-    Route::get('categories/parents', 'parents');
     Route::get('categories/{category}', 'show');
 });
 

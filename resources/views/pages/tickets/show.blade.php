@@ -188,7 +188,8 @@
                         <form action="{{ route('ticket-messages.store', $ticket->id) }}" method="POST">
                             <div class="main-chat-footer">
                                 @csrf
-                                <input class="form-control" required name="message" placeholder="Type your message here..." type="text">
+                                <input class="form-control" required name="message" placeholder="Type your message here..."
+                                    type="text">
                                 {{-- <a class="nav-link" data-bs-toggle="tooltip" href="javascript:void(0)"
                                     title="Attach a File"><i class="fe fe-paperclip"></i></a> --}}
                                 <button type="submit" class="btn btn-icon  btn-primary brround"><i
@@ -203,4 +204,13 @@
         </div>
 
     </div>
+    <script>
+        setTimeout(() => {
+            Echo.channel('ticket-chat')
+                .listen('message.sent', e => {
+                    console.log('Event received', e);
+                });
+
+        }, 500);
+    </script>
 @endsection

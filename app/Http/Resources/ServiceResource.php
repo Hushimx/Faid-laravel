@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ServiceResource extends JsonResource
@@ -39,6 +40,7 @@ class ServiceResource extends JsonResource
         return [
           'id' => $this->vendor->id,
           'name' => $this->vendor->name,
+          'profile_picture' => $this->vendor->profile_picture ? url(Storage::url($this->vendor->profile_picture)) : null,
         ];
       }),
       'images' => MediaResource::collection($this->whenLoaded('images')),

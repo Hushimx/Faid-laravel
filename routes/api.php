@@ -44,6 +44,10 @@ Route::controller(ServiceController::class)->group(function () {
     Route::get('services', 'index');
     Route::get('services/{service}', 'show');
 
+    // Reviews for services (public list, auth to post)
+    Route::get('services/{service}/reviews', [\App\Http\Controllers\Api\ServiceReviewController::class, 'index']);
+    Route::post('services/{service}/reviews', [\App\Http\Controllers\Api\ServiceReviewController::class, 'store'])->middleware(['auth:sanctum', 'ensure-verified-user']);
+
     // Vendor routes only (authenticated vendors)
     Route::middleware(['auth:sanctum', 'ensure-verified-user'])->group(function () {
         Route::post('services', 'store');

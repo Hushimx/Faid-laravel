@@ -35,7 +35,9 @@ class ServiceController extends Controller
 
     $query = Service::query()
       ->with(['category', 'vendor'])
-      ->withCount('images');
+      ->withCount('images')
+      ->withCount('reviews')
+      ->withAvg('reviews', 'rating');
 
     // Public users only see visible services
     if (!$isVendor) {
@@ -121,7 +123,7 @@ class ServiceController extends Controller
       }
     }
 
-    $service->load(['category', 'vendor', 'images', 'videos']);
+    $service->load(['category', 'vendor', 'images', 'videos', 'reviews.user']);
 
     return ApiResponse::success(
       new ServiceResource($service),

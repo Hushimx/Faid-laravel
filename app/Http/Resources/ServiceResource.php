@@ -49,6 +49,10 @@ class ServiceResource extends JsonResource
         $this->relationLoaded('images'),
         fn() => $this->primaryImage() ? new MediaResource($this->primaryImage()) : null
       ),
+      // Ratings
+      'rating' => (float) ($this->reviews_avg_rating ?? 0),
+      'reviews_count' => (int) ($this->reviews_count ?? 0),
+      'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
     ];
   }
 }

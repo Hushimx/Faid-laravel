@@ -83,6 +83,31 @@ class Service extends Model
     }
 
     /**
+     * Reviews relation.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Average rating (float) for the service.
+     */
+    public function averageRating(): ?float
+    {
+        $avg = $this->reviews()->avg('rating');
+        return $avg !== null ? (float) number_format((float) $avg, 2) : null;
+    }
+
+    /**
+     * Reviews count.
+     */
+    public function reviewsCount(): int
+    {
+        return (int) $this->reviews()->count();
+    }
+
+    /**
      * Images relation.
      */
     public function images(): MorphMany

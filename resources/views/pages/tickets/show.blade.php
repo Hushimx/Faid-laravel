@@ -206,8 +206,10 @@
     </div>
     <script>
         setTimeout(() => {
-            Echo.channel('ticket-chat')
+
+            window.Echo.channel('ticket-chat')
                 .listen('message.sent', e => {
+                    alert('test');
                     console.log('Event received', e);
                 });
 

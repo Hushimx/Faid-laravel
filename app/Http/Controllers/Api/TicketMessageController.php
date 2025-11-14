@@ -9,6 +9,7 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class TicketMessageController extends Controller
@@ -74,6 +75,8 @@ class TicketMessageController extends Controller
             'attachment' => ['nullable', 'file', 'max:10240'], // 10MB max
         ]);
 
+
+
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
             $attachmentPath = $request->file('attachment')->store('ticket-attachments', 'public');
@@ -87,7 +90,12 @@ class TicketMessageController extends Controller
             'is_read' => false,
         ]);
 
-        broadcast(new TicketMessageSent($message))->toOthers();
+        try {
+            broadcast(new TicketMessageSent($message));
+        } catch (\Exception $e) {
+            // Log the error but don't fail the request
+            logger()->error('Broadcasting TicketMessageSent failed: ' . $e->getMessage());
+        }
         $message->load('user');
 
         return ApiResponse::success(

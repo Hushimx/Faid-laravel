@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 
 
+Route::view('/test', 'test');
+
+
 // Language Route
 Route::get('change-locale/{locale}', function ($locale) {
     // verify locale exists in supported languages
@@ -111,7 +114,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{service}', 'update')->name('update');
         Route::post('/{service}/status', 'updateStatus')->name('status.update');
         Route::delete('/{service}', 'destroy')->name('destroy');
-            Route::delete('/{service}/reviews/{review}', 'destroyReview')->name('reviews.destroy');
+        Route::delete('/{service}/reviews/{review}', 'destroyReview')->name('reviews.destroy');
     });
 
     // Products Routes

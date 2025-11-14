@@ -109,7 +109,7 @@
                         <option value="">@lang('dashboard.All Vendors')</option>
                         @foreach ($vendors as $vendor)
                             <option value="{{ $vendor->id }}" @selected($filters['vendor_id'] === $vendor->id)>
-                                {{ $vendor->name }}
+                                {{ $vendor->first_name }} {{ $vendor->last_name }}
                             </option>
                         @endforeach
                     </select>

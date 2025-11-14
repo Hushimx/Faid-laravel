@@ -71,7 +71,7 @@ class ServiceController extends Controller
       'pending' => Service::where('status', Service::STATUS_PENDING)->count(),
     ];
 
-    $vendors = \App\Models\User::where('type', 'vendor')->get(['id', 'name']);
+    $vendors = \App\Models\User::where('type', 'vendor')->get(['id', 'first_name', 'last_name']);
     $categories = \App\Models\Category::all(['id', 'name']);
 
     return view('pages.services', compact('services', 'stats', 'filters', 'perPageOptions', 'vendors', 'categories'));
@@ -82,7 +82,7 @@ class ServiceController extends Controller
    */
   public function show(Service $service): View
   {
-    $service->load(['category', 'vendor', 'images', 'videos']);
+    $service->load(['category', 'vendor', 'images', 'videos', 'reviews.user']);
     return view('pages.services-show', compact('service'));
   }
 
@@ -190,5 +190,20 @@ class ServiceController extends Controller
     $hasContent = collect($input)->filter(fn($value) => filled($value))->isNotEmpty();
 
     return $hasContent ? normalize_translations($input) : null;
+  }
+
+  /**
+   * Delete a review from a service.
+   */
+  public function destroyReview(Service $service, \App\Models\Review $review)
+  {
+    // Verify the review belongs to this service
+    if ($review->service_id !== $service->id) {
+      return redirect()->back()->with('error', 'Review not found');
+    }
+
+    $review->delete();
+
+    return redirect()->back()->with('success', 'Review deleted successfully');
   }
 }

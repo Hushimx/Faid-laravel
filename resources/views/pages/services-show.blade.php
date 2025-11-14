@@ -7,12 +7,16 @@
 @endphp
 
 @section('content')
+
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">@lang('dashboard.Service Details')</h4>
             <div>
                 <a href="{{ route('services.edit', $service) }}" class="btn btn-primary">
                     <i class="fe fe-edit me-1"></i>@lang('dashboard.Edit')
+
+                    {{-- @section('content') --}}
+
                 </a>
                 <a href="{{ route('services.index') }}" class="btn btn-light">
                     <i class="fe fe-arrow-left me-1"></i>@lang('dashboard.Back')
@@ -137,4 +141,96 @@
             </div>
         </div>
     </div>
+
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header">
+            <tr>
+                <th class="bg-light">@lang('dashboard.Rating')</th>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-warning-transparent text-warning fs-6">
+                            @if ($service->averageRating())
+                                {{ number_format($service->averageRating(), 1) }}
+                                <i class="fe fe-star-fill ms-1"></i>
+                            @else
+                                @lang('dashboard.No ratings yet')
+                            @endif
+                        </span>
+                        <small class="text-muted">
+                            @if ($service->reviewsCount() > 0)
+                                ({{ $service->reviewsCount() }} @lang('dashboard.review' . ($service->reviewsCount() > 1 ? 's' : '')))
+                            @endif
+                        </small>
+                    </div>
+                </td>
+            </tr>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th>@lang('dashboard.Rating')</th>
+                            <th>@lang('dashboard.Comment')</th>
+                            <th>@lang('dashboard.User')</th>
+                            <th>@lang('dashboard.Created At')</th>
+                            <th>@lang('dashboard.Actions')</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($service->reviews as $review)
+                            <tr>
+                                <td>
+                                    <span class="badge bg-warning-transparent text-warning fs-6">
+                                        {{ number_format($review->rating, 1) }}
+                                        <i class="fe fe-star-fill ms-1"></i>
+                                    </span>
+                                </td>
+                                <td>{{ $review->comment }}</td>
+                                <td>{{ $review->user->name }}</td>
+                                <td>{{ $review->created_at->format('Y-m-d H:i:s') }}</td>
+                                <td>
+                                    <form
+                                        action="{{ route('services.reviews.destroy', ['service' => $service->id, 'review' => $review->id]) }}"
+                                        method="POST" onsubmit="return confirm('@lang('dashboard.Are you sure you want to delete this review?')');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="fe fe-trash me-1"></i>@lang('dashboard.Delete')
+                                        </button>
+                                    </form>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    {{-- @section('scripts')
+    <script>
+        // Initialize the map
+
+    <tr>
+            <th class="bg-light">@lang('dashboard.Rating')</th>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-warning-transparent text-warning fs-6">
+                        @if ($service->averageRating())
+                            {{ number_format($service->averageRating(), 1) }}
+                            <i class="fe fe-star-fill ms-1"></i>
+                        @else
+                            @lang('dashboard.No ratings yet')
+                        @endif
+                    </span>
+                    <small class="text-muted">
+                        @if ($service->reviewsCount() > 0)
+                            ({{ $service->reviewsCount() }} @lang('dashboard.review' . ($service->reviewsCount() > 1 ? 's' : '')))
+                        @endif
+                    </small>
+                </div>
+            </td>
+        </tr> --}}
 @endsection

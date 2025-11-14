@@ -78,7 +78,7 @@ class ProductController extends Controller
       'out_of_stock' => Product::where('stock_quantity', '<=', 0)->count(),
     ];
 
-    $vendors = \App\Models\User::where('type', 'vendor')->get(['id', 'name']);
+    $vendors = \App\Models\User::where('type', 'vendor')->get(['id', 'first_name', 'last_name']);
     $categories = \App\Models\Category::all(['id', 'name']);
 
     return view('pages.products', compact('products', 'stats', 'filters', 'perPageOptions', 'vendors', 'categories'));

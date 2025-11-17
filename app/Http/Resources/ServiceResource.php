@@ -25,6 +25,8 @@ class ServiceResource extends JsonResource
       'admin_status' => $this->admin_status,
       'is_visible' => $this->isVisible(),
       'attributes' => $this->attributes ?? [],
+      'lat' => $this->lat ? (float) $this->lat : null,
+      'lng' => $this->lng ? (float) $this->lng : null,
       'published_at' => optional($this->published_at)->format('Y-m-d H:i:s'),
       'created_at' => optional($this->created_at)->format('Y-m-d H:i:s'),
       'updated_at' => optional($this->updated_at)->format('Y-m-d H:i:s'),

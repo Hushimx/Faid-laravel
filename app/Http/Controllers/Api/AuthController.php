@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Http;
+use Propaganistas\LaravelPhone\Rules\Phone;
 
 class AuthController extends Controller
 {
@@ -216,7 +218,7 @@ class AuthController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', new Phone],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'type' => ['nullable', 'string', Rule::in(['user', 'vendor'])],
         ];
@@ -236,6 +238,7 @@ class AuthController extends Controller
         }
 
         $validated = $request->validate($rules);
+
 
         $vendorProfileData = $validated['vendor_profile'] ?? [];
 
@@ -296,14 +299,18 @@ class AuthController extends Controller
     public function sendOtp(Request $request)
     {
         $request->validate([
-            'email' => ['required', 'string', 'email', 'exists:users,email', 'max:255'],
+            'phone' => ['required', 'string', 'exists:users,phone', 'max:255', new Phone],
         ]);
 
-        $user = User::where('email', $request->email)->first();
+
+
+        $user = User::where('phone', $request->phone)->first();
 
         if (!$user) {
             return ApiResponse::error('User not found', [], 404);
         }
+
+        $request->merge(['phone' => ltrim($request->phone, '+')]);
 
         $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
         $user->otp = $otp;
@@ -312,7 +319,16 @@ class AuthController extends Controller
 
         // Send OTP via email
         try {
-            Mail::to($user->email)->send(new SendOtp($user, $otp));
+            $data = [
+                'number' => $request->phone,
+                'type' => 'text',
+                'message' => 'رمز التحقق الخاص بك هو: ' . $otp,
+                'instance_id' => '6913EBDBC98DC',
+                'access_token' => '69124dec58076',
+            ];
+    
+            Http::post('https://whatsapp.myjarak.com/api/send', $data);
+            
         } catch (\Exception $e) {
             report($e);
             return ApiResponse::error('Failed to send OTP email', [], 500);
@@ -324,11 +340,11 @@ class AuthController extends Controller
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'email' => ['required', 'string', 'email', 'exists:users,email', 'max:255'],
+            'phone' => ['required', 'string', 'exists:users,phone', 'max:255', new Phone],
             'otp' => ['required', 'string', 'max:6'],
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('phone', $request->phone)->first();
 
         if (!$user) {
             return ApiResponse::error('User not found', [], 404);

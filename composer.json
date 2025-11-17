@@ -16,6 +16,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "outhebox/laravel-translations": "^1.4",
+        "propaganistas/laravel-phone": "^6.0",
         "spatie/laravel-permission": "^6.23",
         "spatie/laravel-translatable": "^6.11"
     },

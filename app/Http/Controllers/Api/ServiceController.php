@@ -156,6 +156,8 @@ class ServiceController extends Controller
       $service->status = $validated['status'];
       $service->attributes = $validated['attributes'] ?? null;
       $service->published_at = $validated['status'] === Service::STATUS_ACTIVE ? now() : null;
+      $service->lat = $validated['lat'] ?? null;
+      $service->lng = $validated['lng'] ?? null;
       $service->save();
 
       // Handle media uploads
@@ -204,6 +206,8 @@ class ServiceController extends Controller
       $service->price = $validated['price'] ?? null;
       $service->status = $validated['status'];
       $service->attributes = $validated['attributes'] ?? null;
+      $service->lat = $validated['lat'] ?? $service->lat;
+      $service->lng = $validated['lng'] ?? $service->lng;
 
       // Update published_at based on status
       if ($service->status === Service::STATUS_ACTIVE && !$service->published_at) {
@@ -286,6 +290,8 @@ class ServiceController extends Controller
       'media.*.type' => ['required_with:media', Rule::in(['image', 'video'])],
       'media.*.is_primary' => ['nullable', 'boolean'],
       'media.*.order' => ['nullable', 'integer', 'min:0'],
+      'lat' => ['nullable', 'numeric', 'between:-90,90'],
+      'lng' => ['nullable', 'numeric', 'between:-180,180'],
     ];
 
     return $request->validate($rules);

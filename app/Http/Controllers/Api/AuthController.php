@@ -284,9 +284,17 @@ class AuthController extends Controller
 
             $user->loadMissing(['vendorProfile.country', 'vendorProfile.city']);
 
+
+            // Create token
+        $deviceName = $request->userAgent() ?: 'unknown';
+        $token = $user->createToken($deviceName)->plainTextToken;
+
             // Return created user with transformed data
             return ApiResponse::success(
-                new UserResource($user),
+                [
+                    'token' => $token,
+                    'user' => new UserResource($user)
+                ],
                 'Account created',
                 201
             );
@@ -318,7 +326,6 @@ class AuthController extends Controller
         $user->save();
 
         // Send OTP via email
-        try {
             $data = [
                 'number' => $request->phone,
                 'type' => 'text',
@@ -327,12 +334,14 @@ class AuthController extends Controller
                 'access_token' => '69124dec58076',
             ];
     
-            Http::post('https://whatsapp.myjarak.com/api/send', $data);
+            $response = Http::post('https://whatsapp.myjarak.com/api/send', $data);
+            $json_response = $response->json();
+
+            if ($json_response['status'] != 'success') {
+                return ApiResponse::error('Failed to send OTP', [], 500);
+            }
             
-        } catch (\Exception $e) {
-            report($e);
-            return ApiResponse::error('Failed to send OTP email', [], 500);
-        }
+        
 
         return ApiResponse::success([], 'OTP sent successfully');
     }
@@ -364,5 +373,34 @@ class AuthController extends Controller
         $user->save();
 
         return ApiResponse::success([], 'OTP verified successfully');
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'phone' => ['required', 'string', 'exists:users,phone', 'max:255', new Phone],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            return ApiResponse::error('User not found', [], 404);
+        }
+
+        if ($user->otp !== $request->otp) {
+            return ApiResponse::error('Invalid OTP', [], 400);
+        }
+
+        if ($user->otp_expires_at < now()) {
+            return ApiResponse::error('OTP expired', [], 400);
+        }
+
+        $user->otp = null;
+        $user->otp_expires_at = null;
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return ApiResponse::success([], 'Password reset successfully');
     }
 }

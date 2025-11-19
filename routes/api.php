@@ -18,8 +18,9 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('login', 'login');
 
     // OTP routes
-    Route::post('send-otp', 'sendOtp');
+    Route::post('send-otp', 'sendOtp')->middleware('throttle:1,1');
     Route::post('verify-otp', 'verifyOtp');
+    Route::post('reset-password', 'resetPassword');
 
     // Protected routes
     Route::middleware(['auth:sanctum', 'ensure-verified-user'])->group(function () {

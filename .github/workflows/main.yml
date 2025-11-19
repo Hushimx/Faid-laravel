@@ -11,6 +11,7 @@ jobs:
     - name: 📂 Sync files
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
-        server: ftp://88.214.57.17:21
+        server: 88.214.57.17
+        port: 21
         username: fayd
         password: N8kHieP7WFwBiAyK

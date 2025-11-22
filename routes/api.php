@@ -86,3 +86,11 @@ Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(TicketMe
     Route::post('tickets/{ticket}/messages', 'store');
     Route::post('tickets/{ticket}/messages/mark-read', 'markAsRead');
 });
+
+// Chat Routes
+Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(\App\Http\Controllers\Api\ChatController::class)->group(function () {
+    Route::get('chats', 'chats');
+    Route::post('chats/start', 'startChat');
+    Route::get('chats/{chat}/messages', 'messages');
+    Route::post('chats/{chat}/messages', 'send');
+});

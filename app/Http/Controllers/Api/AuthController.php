@@ -286,8 +286,8 @@ class AuthController extends Controller
 
 
             // Create token
-        $deviceName = $request->userAgent() ?: 'unknown';
-        $token = $user->createToken($deviceName)->plainTextToken;
+            $deviceName = $request->userAgent() ?: 'unknown';
+            $token = $user->createToken($deviceName)->plainTextToken;
 
             // Return created user with transformed data
             return ApiResponse::success(
@@ -326,22 +326,22 @@ class AuthController extends Controller
         $user->save();
 
         // Send OTP via email
-            $data = [
-                'number' => $request->phone,
-                'type' => 'text',
-                'message' => 'رمز التحقق الخاص بك هو: ' . $otp,
-                'instance_id' => '6913EBDBC98DC',
-                'access_token' => '69124dec58076',
-            ];
-    
-            $response = Http::post('https://whatsapp.myjarak.com/api/send', $data);
-            $json_response = $response->json();
+        $data = [
+            'number' => $request->phone,
+            'type' => 'text',
+            'message' => 'رمز التحقق الخاص بك هو: ' . $otp,
+            'instance_id' => '6913EBDBC98DC',
+            'access_token' => '69124dec58076',
+        ];
 
-            if ($json_response['status'] != 'success') {
-                return ApiResponse::error('Failed to send OTP', [], 500);
-            }
-            
-        
+        $response = Http::post('https://whatsapp.myjarak.com/api/send', $data);
+        $json_response = $response->json();
+
+        if ($json_response['status'] != 'success') {
+            return ApiResponse::error('Failed to send OTP', [], 500);
+        }
+
+
 
         return ApiResponse::success([], 'OTP sent successfully');
     }
@@ -351,6 +351,7 @@ class AuthController extends Controller
         $request->validate([
             'phone' => ['required', 'string', 'exists:users,phone', 'max:255', new Phone],
             'otp' => ['required', 'string', 'max:6'],
+            'type' => 'required|string|in:verification,password_reset',
         ]);
 
         $user = User::where('phone', $request->phone)->first();
@@ -367,12 +368,23 @@ class AuthController extends Controller
             return ApiResponse::error('OTP expired', [], 400);
         }
 
-        $user->otp = null;
-        $user->otp_expires_at = null;
-        $user->email_verified_at = now();
+        if ($request->type === 'verification') {
+            $user->otp = null;
+            $user->otp_expires_at = null;
+            $user->email_verified_at = now();
+        }
+        if ($request->type === 'password_reset') {
+            $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $user->otp = $otp;
+            $user->otp_expires_at = now()->addMinutes(10);
+        }
+
+
         $user->save();
 
-        return ApiResponse::success([], 'OTP verified successfully');
+        return ApiResponse::success([
+            'otp' => $request->type === 'password_reset' ? $user->otp : null,
+        ], 'OTP verified successfully');
     }
 
     public function resetPassword(Request $request)

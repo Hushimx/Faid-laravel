@@ -61,6 +61,8 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorize('users.view');
+        
         $query = User::query();
         $query = $this->applyFilters($query, $request);
         $users = $query->paginate(20);
@@ -82,6 +84,8 @@ class UserController extends Controller
      */
     public function admins(Request $request)
     {
+        $this->authorize('users.view');
+        
         $query = User::where('type', 'admin');
         $query = $this->applyFilters($query, $request);
         $users = $query->paginate(20);
@@ -103,6 +107,8 @@ class UserController extends Controller
      */
     public function users(Request $request)
     {
+        $this->authorize('users.view');
+        
         $query = User::where('type', 'user');
         $query = $this->applyFilters($query, $request);
         $users = $query->paginate(20);
@@ -124,6 +130,8 @@ class UserController extends Controller
      */
     public function vendors(Request $request)
     {
+        $this->authorize('users.view');
+        
         $query = User::where('type', 'vendor');
         $query = $this->applyFilters($query, $request);
         $users = $query->paginate(20);
@@ -146,6 +154,8 @@ class UserController extends Controller
      */
     public function create(Request $request)
     {
+        $this->authorize('users.create');
+        
         $type = $request->get('type', 'user'); // Default to 'user' if not provided
 
         // Validate type
@@ -165,6 +175,8 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('users.create');
+        
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -306,6 +318,8 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
+        $this->authorize('users.edit');
+        
         $countries = Country::orderBy('name')->get();
         $cities = City::orderBy('name')->get();
         $user->load('vendorProfile');
@@ -319,6 +333,8 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $this->authorize('users.edit');
+        
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -457,6 +473,8 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        $this->authorize('users.delete');
+        
         // Don't allow deleting your own account
         if ($user->id === Auth::id()) {
             return redirect()

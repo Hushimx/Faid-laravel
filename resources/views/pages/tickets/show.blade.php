@@ -28,25 +28,27 @@
                         @else bg-info-transparent text-info @endif">
                             @lang('dashboard.' . ucfirst($ticket->priority))
                         </span>
-                        @if ($ticket->isOpen())
-                            <form action="{{ route('tickets.update', $ticket) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('PUT')
-                                <input type="hidden" name="status" value="closed">
-                                <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                    <i class="fe fe-x me-1"></i>@lang('dashboard.Close Ticket')
-                                </button>
-                            </form>
-                        @else
-                            <form action="{{ route('tickets.update', $ticket) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('PUT')
-                                <input type="hidden" name="status" value="open">
-                                <button type="submit" class="btn btn-sm btn-outline-success">
-                                    <i class="fe fe-check me-1"></i>@lang('dashboard.Reopen Ticket')
-                                </button>
-                            </form>
-                        @endif
+                        @can('tickets.edit')
+                            @if ($ticket->isOpen())
+                                <form action="{{ route('tickets.update', $ticket) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="status" value="closed">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fe fe-x me-1"></i>@lang('dashboard.Close Ticket')
+                                    </button>
+                                </form>
+                            @else
+                                <form action="{{ route('tickets.update', $ticket) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="status" value="open">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                        <i class="fe fe-check me-1"></i>@lang('dashboard.Reopen Ticket')
+                                    </button>
+                                </form>
+                            @endif
+                        @endcan
                         <a href="{{ route('tickets.index') }}" class="btn btn-sm btn-light">
                             <i class="fe fe-arrow-left me-1"></i>@lang('dashboard.Back')
                         </a>

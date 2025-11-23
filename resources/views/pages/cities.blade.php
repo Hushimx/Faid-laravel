@@ -4,9 +4,11 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title">@lang('dashboard.Cities List')</h4>
-            <a class="modal-effect btn btn-primary" data-bs-effect="effect-scale" data-bs-toggle="modal" href="#createModal">
-                @lang('dashboard.Create New City')
-            </a>
+            @can('cities.create')
+                <a class="modal-effect btn btn-primary" data-bs-effect="effect-scale" data-bs-toggle="modal" href="#createModal">
+                    @lang('dashboard.Create New City')
+                </a>
+            @endcan
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -26,14 +28,18 @@
                                 <td>{{ $city->name }}</td>
                                 <td>{{ $city->country->name }}</td>
                                 <td>
-                                    <a class="modal-effect btn btn-success btn-sm" data-bs-effect="effect-scale"
-                                        data-bs-toggle="modal" href="#updateModal{{ $city->id }}">
-                                        <i class="fa fa-edit"></i>
-                                    </a>
-                                    <a class="modal-effect btn btn-danger btn-sm" data-bs-effect="effect-scale"
-                                        data-bs-toggle="modal" href="#deleteModal{{ $city->id }}">
-                                        <i class="fa fa-trash"></i>
-                                    </a>
+                                    @can('cities.edit')
+                                        <a class="modal-effect btn btn-success btn-sm" data-bs-effect="effect-scale"
+                                            data-bs-toggle="modal" href="#updateModal{{ $city->id }}">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
+                                    @endcan
+                                    @can('cities.delete')
+                                        <a class="modal-effect btn btn-danger btn-sm" data-bs-effect="effect-scale"
+                                            data-bs-toggle="modal" href="#deleteModal{{ $city->id }}">
+                                            <i class="fa fa-trash"></i>
+                                        </a>
+                                    @endcan
                                 </td>
                             </tr>
 

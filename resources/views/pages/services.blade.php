@@ -218,32 +218,40 @@
                                 <td>{{ optional($service->created_at)->format('Y-m-d') }}</td>
                                 <td class="text-end pe-4">
                                     <div class="btn-group">
-                                        <a href="{{ route('services.show', $service) }}"
-                                            class="btn btn-sm btn-outline-primary" title="@lang('dashboard.View')">
-                                            <i class="fe fe-eye"></i>
-                                        </a>
-                                        <a href="{{ route('services.edit', $service) }}"
-                                            class="btn btn-sm btn-outline-info" title="@lang('dashboard.Edit')">
-                                            <i class="fe fe-edit"></i>
-                                        </a>
-                                        @if ($service->admin_status === 'suspended')
-                                            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
-                                                data-bs-target="#activateServiceModal{{ $service->id }}"
-                                                title="@lang('dashboard.Activate')">
-                                                <i class="fe fe-check"></i>
-                                            </button>
-                                        @else
+                                        @can('services.view')
+                                            <a href="{{ route('services.show', $service) }}"
+                                                class="btn btn-sm btn-outline-primary" title="@lang('dashboard.View')">
+                                                <i class="fe fe-eye"></i>
+                                            </a>
+                                        @endcan
+                                        @can('services.edit')
+                                            <a href="{{ route('services.edit', $service) }}"
+                                                class="btn btn-sm btn-outline-info" title="@lang('dashboard.Edit')">
+                                                <i class="fe fe-edit"></i>
+                                            </a>
+                                        @endcan
+                                        @can('services.manage')
+                                            @if ($service->admin_status === 'suspended')
+                                                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                                                    data-bs-target="#activateServiceModal{{ $service->id }}"
+                                                    title="@lang('dashboard.Activate')">
+                                                    <i class="fe fe-check"></i>
+                                                </button>
+                                            @else
+                                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                                    data-bs-target="#suspendServiceModal{{ $service->id }}"
+                                                    title="@lang('dashboard.Suspend')">
+                                                    <i class="fe fe-x-circle"></i>
+                                                </button>
+                                            @endif
+                                        @endcan
+                                        @can('services.delete')
                                             <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
-                                                data-bs-target="#suspendServiceModal{{ $service->id }}"
-                                                title="@lang('dashboard.Suspend')">
-                                                <i class="fe fe-x-circle"></i>
+                                                data-bs-target="#deleteServiceModal{{ $service->id }}"
+                                                title="@lang('dashboard.Delete')">
+                                                <i class="fe fe-trash"></i>
                                             </button>
-                                        @endif
-                                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
-                                            data-bs-target="#deleteServiceModal{{ $service->id }}"
-                                            title="@lang('dashboard.Delete')">
-                                            <i class="fe fe-trash"></i>
-                                        </button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

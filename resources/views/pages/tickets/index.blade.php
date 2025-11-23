@@ -226,15 +226,19 @@
                                 <td>{{ $ticket->created_at->format('Y-m-d H:i') }}</td>
                                 <td class="text-end pe-4">
                                     <div class="btn-group">
-                                        <a href="{{ route('tickets.show', $ticket) }}"
-                                            class="btn btn-sm btn-outline-primary" title="@lang('dashboard.View')">
-                                            <i class="fe fe-eye"></i>
-                                        </a>
-                                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
-                                            data-bs-target="#deleteTicketModal{{ $ticket->id }}"
-                                            title="@lang('dashboard.Delete')">
-                                            <i class="fe fe-trash"></i>
-                                        </button>
+                                        @can('tickets.view')
+                                            <a href="{{ route('tickets.show', $ticket) }}"
+                                                class="btn btn-sm btn-outline-primary" title="@lang('dashboard.View')">
+                                                <i class="fe fe-eye"></i>
+                                            </a>
+                                        @endcan
+                                        @can('tickets.delete')
+                                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                                data-bs-target="#deleteTicketModal{{ $ticket->id }}"
+                                                title="@lang('dashboard.Delete')">
+                                                <i class="fe fe-trash"></i>
+                                            </button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

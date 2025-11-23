@@ -11,9 +11,11 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">@lang('dashboard.Product Details')</h4>
             <div>
-                <a href="{{ route('products.edit', $product) }}" class="btn btn-primary">
-                    <i class="fe fe-edit me-1"></i>@lang('dashboard.Edit')
-                </a>
+                @can('products.edit')
+                    <a href="{{ route('products.edit', $product) }}" class="btn btn-primary">
+                        <i class="fe fe-edit me-1"></i>@lang('dashboard.Edit')
+                    </a>
+                @endcan
                 <a href="{{ route('products.index') }}" class="btn btn-light">
                     <i class="fe fe-arrow-left me-1"></i>@lang('dashboard.Back')
                 </a>

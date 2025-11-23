@@ -17,6 +17,8 @@ class ServiceController extends Controller
    */
   public function index(Request $request): View
   {
+    $this->authorize('services.view');
+    
     $filters = [
       'search' => $request->string('search')->toString(),
       'status' => $request->string('status')->toString(),
@@ -82,6 +84,8 @@ class ServiceController extends Controller
    */
   public function show(Service $service): View
   {
+    $this->authorize('services.view');
+    
     $service->load(['category', 'vendor', 'images', 'videos', 'reviews.user']);
     return view('pages.services-show', compact('service'));
   }
@@ -91,6 +95,8 @@ class ServiceController extends Controller
    */
   public function edit(Service $service): View
   {
+    $this->authorize('services.edit');
+    
     $service->load(['category', 'vendor', 'images', 'videos']);
     $categories = \App\Models\Category::all(['id', 'name']);
     return view('pages.services-edit', compact('service', 'categories'));
@@ -101,6 +107,8 @@ class ServiceController extends Controller
    */
   public function update(Request $request, Service $service): RedirectResponse
   {
+    $this->authorize('services.edit');
+    
     $validated = $request->validate([
       'category_id' => ['required', 'exists:categories,id'],
       'title' => ['required', 'array'],
@@ -147,6 +155,8 @@ class ServiceController extends Controller
    */
   public function updateStatus(Request $request, Service $service): RedirectResponse
   {
+    $this->authorize('services.manage');
+    
     $validated = $request->validate([
       'admin_status' => ['nullable', Rule::in([null, Service::ADMIN_STATUS_SUSPENDED])],
     ]);
@@ -166,6 +176,8 @@ class ServiceController extends Controller
    */
   public function destroy(Service $service): RedirectResponse
   {
+    $this->authorize('services.delete');
+    
     // Delete associated media files
     foreach ($service->media as $media) {
       if ($media->path && Storage::exists($media->path)) {
@@ -197,6 +209,8 @@ class ServiceController extends Controller
    */
   public function destroyReview(Service $service, \App\Models\Review $review)
   {
+    $this->authorize('services.manage');
+    
     // Verify the review belongs to this service
     if ($review->service_id !== $service->id) {
       return redirect()->back()->with('error', 'Review not found');

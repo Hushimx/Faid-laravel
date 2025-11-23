@@ -71,6 +71,20 @@ class RolePermissionSeeder extends Seeder
       'products.delete',
       'products.manage',
 
+      // Tickets permissions
+      'tickets.view',
+      'tickets.create',
+      'tickets.edit',
+      'tickets.delete',
+      'tickets.manage',
+
+      // Offers permissions
+      'offers.view',
+      'offers.create',
+      'offers.edit',
+      'offers.delete',
+      'offers.manage',
+
       // Dashboard
       'dashboard.view',
     ];

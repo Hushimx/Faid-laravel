@@ -16,6 +16,8 @@ class CategoryController extends Controller
    */
   public function index(Request $request): View
   {
+    $this->authorize('categories.view');
+    
     $filters = [
       'search' => $request->string('search')->toString(),
       'status' => $request->string('status')->toString(),
@@ -58,6 +60,8 @@ class CategoryController extends Controller
    */
   public function store(Request $request): RedirectResponse
   {
+    $this->authorize('categories.create');
+    
     $data = $this->validateData($request);
 
     $category = new Category();
@@ -87,6 +91,8 @@ class CategoryController extends Controller
    */
   public function update(Request $request, Category $category): RedirectResponse
   {
+    $this->authorize('categories.edit');
+    
     $data = $this->validateData($request, (int) $category->id);
     $category->name = normalize_translations($request->input('name'));
     $category->description = $this->normalizeOptionalTranslations($request->input('description'));
@@ -114,6 +120,8 @@ class CategoryController extends Controller
    */
   public function destroy(Category $category): RedirectResponse
   {
+    $this->authorize('categories.delete');
+    
     if ($category->image) {
       deleteFile($category->image);
     }

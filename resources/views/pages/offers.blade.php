@@ -4,8 +4,10 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title">@lang('dashboard.Offers')</h4>
-            <button class="btn btn-primary" data-bs-toggle="modal"
-                data-bs-target="#createOfferModal">@lang('dashboard.Create New Offer')</button>
+            @can('offers.create')
+                <button class="btn btn-primary" data-bs-toggle="modal"
+                    data-bs-target="#createOfferModal">@lang('dashboard.Create New Offer')</button>
+            @endcan
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -18,13 +20,17 @@
                                 <span
                                     class="badge {{ $offer->status == App\Models\Offer::STATUS_ACTIVE ? 'bg-success' : 'bg-secondary' }}">@lang('dashboard.' . ucfirst($offer->status))</span>
                                 <div>
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                        data-bs-target="#editOfferModal{{ $offer->id }}">@lang('dashboard.Edit')</button>
-                                    <form action="{{ route('offers.destroy', $offer) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-sm btn-outline-danger">@lang('dashboard.Delete')</button>
-                                    </form>
+                                    @can('offers.edit')
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                            data-bs-target="#editOfferModal{{ $offer->id }}">@lang('dashboard.Edit')</button>
+                                    @endcan
+                                    @can('offers.delete')
+                                        <form action="{{ route('offers.destroy', $offer) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-sm btn-outline-danger">@lang('dashboard.Delete')</button>
+                                        </form>
+                                    @endcan
                                 </div>
                             </div>
                         </div>

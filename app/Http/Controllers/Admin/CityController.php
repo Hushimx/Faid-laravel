@@ -11,6 +11,8 @@ class CityController extends Controller
 {
     public function index()
     {
+        $this->authorize('cities.view');
+        
         $cities = City::with('country')->latest()->paginate(15);
         $countries = Country::all();
         return view('pages.cities', compact('cities', 'countries'));
@@ -18,6 +20,8 @@ class CityController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('cities.create');
+        
         $request->validate([
             'name' => 'required|array',
             'name.en' => 'required|string|max:255',
@@ -35,6 +39,8 @@ class CityController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $this->authorize('cities.edit');
+        
         $request->validate([
             'name' => 'required|array',
             'name.en' => 'required|string|max:255',
@@ -52,6 +58,8 @@ class CityController extends Controller
 
     public function destroy(string $id)
     {
+        $this->authorize('cities.delete');
+        
         $city = City::findOrFail($id);
         $city->delete();
 

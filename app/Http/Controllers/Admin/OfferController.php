@@ -11,12 +11,16 @@ class OfferController extends Controller
 {
   public function index()
   {
+    $this->authorize('offers.view');
+    
     $offers = Offer::orderBy('created_at', 'desc')->paginate(20);
     return view('pages.offers', compact('offers'));
   }
 
   public function store(Request $request): RedirectResponse
   {
+    $this->authorize('offers.create');
+    
     $data = $request->validate([
       'image' => ['required', 'image', 'max:5120'],
       'status' => ['required', 'in:' . implode(',', Offer::statuses())],
@@ -37,6 +41,8 @@ class OfferController extends Controller
 
   public function update(Request $request, Offer $offer): RedirectResponse
   {
+    $this->authorize('offers.edit');
+    
     $data = $request->validate([
       'image' => ['nullable', 'image', 'max:5120'],
       'status' => ['required', 'in:' . implode(',', Offer::statuses())],
@@ -58,6 +64,8 @@ class OfferController extends Controller
 
   public function destroy(Offer $offer): RedirectResponse
   {
+    $this->authorize('offers.delete');
+    
     if ($offer->image) deleteFile($offer->image);
     $offer->delete();
     return redirect()->route('offers.index')->with('success', 'Offer deleted');

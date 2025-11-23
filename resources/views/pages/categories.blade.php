@@ -113,9 +113,11 @@
                 <h4 class="card-title mb-0">@lang('dashboard.Categories List')</h4>
                 <small class="text-muted">@lang('dashboard.Categories List Subtitle')</small>
             </div>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
-                <i class="fe fe-plus me-2"></i>@lang('dashboard.Create New Category')
-            </button>
+            @can('categories.create')
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+                    <i class="fe fe-plus me-2"></i>@lang('dashboard.Create New Category')
+                </button>
+            @endcan
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -169,14 +171,18 @@
                                 </td>
                                 <td>{{ optional($category->created_at)->format('Y-m-d') }}</td>
                                 <td class="">
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                        data-bs-target="#editCategoryModal{{ $category->id }}">
-                                        <i class="fe fe-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
-                                        data-bs-target="#deleteCategoryModal{{ $category->id }}">
-                                        <i class="fe fe-trash"></i>
-                                    </button>
+                                    @can('categories.edit')
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                            data-bs-target="#editCategoryModal{{ $category->id }}">
+                                            <i class="fe fe-edit"></i>
+                                        </button>
+                                    @endcan
+                                    @can('categories.delete')
+                                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                            data-bs-target="#deleteCategoryModal{{ $category->id }}">
+                                            <i class="fe fe-trash"></i>
+                                        </button>
+                                    @endcan
                                 </td>
                             </tr>
 
@@ -313,10 +319,12 @@
                                     <div class="py-4">
                                         <h5 class="mb-2">@lang('dashboard.No Categories Found')</h5>
                                         <p class="text-muted mb-3">@lang('dashboard.Start by adding your first category')</p>
-                                        <button class="btn btn-primary" data-bs-toggle="modal"
-                                            data-bs-target="#createCategoryModal">
-                                            <i class="fe fe-plus me-2"></i>@lang('dashboard.Create New Category')
-                                        </button>
+                                        @can('categories.create')
+                                            <button class="btn btn-primary" data-bs-toggle="modal"
+                                                data-bs-target="#createCategoryModal">
+                                                <i class="fe fe-plus me-2"></i>@lang('dashboard.Create New Category')
+                                            </button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

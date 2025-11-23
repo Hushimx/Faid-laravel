@@ -11,12 +11,16 @@ class CountryController extends Controller
 {
     public function index()
     {
+        $this->authorize('countries.view');
+        
         $countries = Country::latest()->paginate(15);
         return view('pages.countries', compact('countries'));
     }
 
     public function store(Request $request)
     {
+        $this->authorize('countries.create');
+        
         $request->validate([
             'name' => 'required|array',
             'name.en' => 'required|string|max:255',
@@ -32,6 +36,8 @@ class CountryController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $this->authorize('countries.edit');
+        
         $request->validate([
             'name' => 'required|array',
             'name.en' => 'required|string|max:255',
@@ -47,6 +53,8 @@ class CountryController extends Controller
 
     public function destroy(string $id)
     {
+        $this->authorize('countries.delete');
+        
         // Check if there are any cities associated with the country
         $cities = City::where('country_id', $id)->get();
         if ($cities->count() > 0) {

@@ -12,12 +12,11 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">@lang('dashboard.Service Details')</h4>
             <div>
-                <a href="{{ route('services.edit', $service) }}" class="btn btn-primary">
-                    <i class="fe fe-edit me-1"></i>@lang('dashboard.Edit')
-
-                    {{-- @section('content') --}}
-
-                </a>
+                @can('services.edit')
+                    <a href="{{ route('services.edit', $service) }}" class="btn btn-primary">
+                        <i class="fe fe-edit me-1"></i>@lang('dashboard.Edit')
+                    </a>
+                @endcan
                 <a href="{{ route('services.index') }}" class="btn btn-light">
                     <i class="fe fe-arrow-left me-1"></i>@lang('dashboard.Back')
                 </a>
@@ -196,9 +195,11 @@
                                         method="POST" onsubmit="return confirm('@lang('dashboard.Are you sure you want to delete this review?')');">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">
-                                            <i class="fe fe-trash me-1"></i>@lang('dashboard.Delete')
-                                        </button>
+                                        @can('services.manage')
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <i class="fe fe-trash me-1"></i>@lang('dashboard.Delete')
+                                            </button>
+                                        @endcan
                                     </form>
                             </tr>
                         @endforeach

@@ -4,9 +4,11 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title">@lang('dashboard.Countries List')</h4>
-            <a class="modal-effect btn btn-primary" data-bs-effect="effect-scale" data-bs-toggle="modal" href="#createModal">
-                @lang('dashboard.Create New Country')
-            </a>
+            @can('countries.create')
+                <a class="modal-effect btn btn-primary" data-bs-effect="effect-scale" data-bs-toggle="modal" href="#createModal">
+                    @lang('dashboard.Create New Country')
+                </a>
+            @endcan
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -22,14 +24,18 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $country->name }}</td>
                             <td>
-                                <a class="modal-effect btn btn-success btn-sm" data-bs-effect="effect-scale"
-                                    data-bs-toggle="modal" href="#updateModal{{ $country->id }}">
-                                    <i class="fa fa-edit"></i>
-                                </a>
-                                <a class="modal-effect btn btn-danger btn-sm" data-bs-effect="effect-scale"
-                                    data-bs-toggle="modal" href="#deleteModal{{ $country->id }}">
-                                    <i class="fa fa-trash"></i>
-                                </a>
+                                @can('countries.edit')
+                                    <a class="modal-effect btn btn-success btn-sm" data-bs-effect="effect-scale"
+                                        data-bs-toggle="modal" href="#updateModal{{ $country->id }}">
+                                        <i class="fa fa-edit"></i>
+                                    </a>
+                                @endcan
+                                @can('countries.delete')
+                                    <a class="modal-effect btn btn-danger btn-sm" data-bs-effect="effect-scale"
+                                        data-bs-toggle="modal" href="#deleteModal{{ $country->id }}">
+                                        <i class="fa fa-trash"></i>
+                                    </a>
+                                @endcan
                             </td>
                         </tr>
 

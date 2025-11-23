@@ -42,4 +42,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 return $apiHandler->handle($e, $request);
             }
         });
+
+        // Handle authorization exceptions for web routes
+        $exceptions->renderable(function (AuthorizationException $e, $request) {
+            if (!$request->expectsJson()) {
+                return redirect()->back()->with('error', __('dashboard.You do not have permission to access this resource'));
+            }
+        });
     })->create();

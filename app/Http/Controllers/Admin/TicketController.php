@@ -29,6 +29,8 @@ class TicketController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->authorize('tickets.view');
+        
         $user = Auth::user();
         
         $query = Ticket::with(['user', 'assignedAdmin', 'latestMessage']);
@@ -88,6 +90,8 @@ class TicketController extends Controller
      */
     public function show(Ticket $ticket): View
     {
+        $this->authorize('tickets.view');
+        
         $user = Auth::user();
         
         // Load relationships
@@ -107,6 +111,8 @@ class TicketController extends Controller
      */
     public function update(Request $request, Ticket $ticket): RedirectResponse
     {
+        $this->authorize('tickets.edit');
+        
         $validated = $request->validate([
             'status' => ['required', 'in:open,closed'],
             'assigned_to' => ['nullable', 'exists:users,id'],
@@ -132,6 +138,8 @@ class TicketController extends Controller
      */
     public function destroy(Ticket $ticket): RedirectResponse
     {
+        $this->authorize('tickets.delete');
+        
         $ticket->delete();
         
         return redirect()->route('tickets.index')

@@ -17,6 +17,8 @@ class ProductController extends Controller
    */
   public function index(Request $request): View
   {
+    $this->authorize('products.view');
+    
     $filters = [
       'search' => $request->string('search')->toString(),
       'status' => $request->string('status')->toString(),
@@ -89,6 +91,8 @@ class ProductController extends Controller
    */
   public function show(Product $product): View
   {
+    $this->authorize('products.view');
+    
     $product->load(['category', 'vendor', 'images', 'videos']);
     return view('pages.products-show', compact('product'));
   }
@@ -98,6 +102,8 @@ class ProductController extends Controller
    */
   public function edit(Product $product): View
   {
+    $this->authorize('products.edit');
+    
     $product->load(['category', 'vendor', 'images', 'videos']);
     $categories = \App\Models\Category::all(['id', 'name']);
     return view('pages.products-edit', compact('product', 'categories'));
@@ -108,6 +114,8 @@ class ProductController extends Controller
    */
   public function update(Request $request, Product $product): RedirectResponse
   {
+    $this->authorize('products.edit');
+    
     $validated = $request->validate([
       'category_id' => ['required', 'exists:categories,id'],
       'title' => ['required', 'array'],
@@ -173,6 +181,8 @@ class ProductController extends Controller
    */
   public function updateStatus(Request $request, Product $product): RedirectResponse
   {
+    $this->authorize('products.manage');
+    
     $validated = $request->validate([
       'admin_status' => ['nullable', Rule::in([null, Product::ADMIN_STATUS_SUSPENDED])],
     ]);
@@ -192,6 +202,8 @@ class ProductController extends Controller
    */
   public function destroy(Product $product): RedirectResponse
   {
+    $this->authorize('products.delete');
+    
     // Delete associated media files
     foreach ($product->media as $media) {
       if ($media->path && Storage::exists($media->path)) {

@@ -224,32 +224,40 @@
                                 <td>{{ optional($product->created_at)->format('Y-m-d') }}</td>
                                 <td class="text-end pe-4">
                                     <div class="btn-group">
-                                        <a href="{{ route('products.show', $product) }}"
-                                            class="btn btn-sm btn-outline-primary" title="@lang('dashboard.View')">
-                                            <i class="fe fe-eye"></i>
-                                        </a>
-                                        <a href="{{ route('products.edit', $product) }}"
-                                            class="btn btn-sm btn-outline-info" title="@lang('dashboard.Edit')">
-                                            <i class="fe fe-edit"></i>
-                                        </a>
-                                        @if ($product->admin_status === 'suspended')
-                                            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
-                                                data-bs-target="#activateProductModal{{ $product->id }}"
-                                                title="@lang('dashboard.Activate')">
-                                                <i class="fe fe-check"></i>
-                                            </button>
-                                        @else
+                                        @can('products.view')
+                                            <a href="{{ route('products.show', $product) }}"
+                                                class="btn btn-sm btn-outline-primary" title="@lang('dashboard.View')">
+                                                <i class="fe fe-eye"></i>
+                                            </a>
+                                        @endcan
+                                        @can('products.edit')
+                                            <a href="{{ route('products.edit', $product) }}"
+                                                class="btn btn-sm btn-outline-info" title="@lang('dashboard.Edit')">
+                                                <i class="fe fe-edit"></i>
+                                            </a>
+                                        @endcan
+                                        @can('products.manage')
+                                            @if ($product->admin_status === 'suspended')
+                                                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                                                    data-bs-target="#activateProductModal{{ $product->id }}"
+                                                    title="@lang('dashboard.Activate')">
+                                                    <i class="fe fe-check"></i>
+                                                </button>
+                                            @else
+                                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                                    data-bs-target="#suspendProductModal{{ $product->id }}"
+                                                    title="@lang('dashboard.Suspend')">
+                                                    <i class="fe fe-x-circle"></i>
+                                                </button>
+                                            @endif
+                                        @endcan
+                                        @can('products.delete')
                                             <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
-                                                data-bs-target="#suspendProductModal{{ $product->id }}"
-                                                title="@lang('dashboard.Suspend')">
-                                                <i class="fe fe-x-circle"></i>
+                                                data-bs-target="#deleteProductModal{{ $product->id }}"
+                                                title="@lang('dashboard.Delete')">
+                                                <i class="fe fe-trash"></i>
                                             </button>
-                                        @endif
-                                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
-                                            data-bs-target="#deleteProductModal{{ $product->id }}"
-                                            title="@lang('dashboard.Delete')">
-                                            <i class="fe fe-trash"></i>
-                                        </button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

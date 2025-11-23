@@ -64,15 +64,17 @@
                     @endif
                 </h5>
                 @if($type !== 'all')
-                <a href="{{ route('users.create', ['type' => $type]) }}" class="btn btn-primary">
-                    @if($type === 'admin')
-                        @lang('dashboard.Add Admin')
-                    @elseif($type === 'vendor')
-                        @lang('dashboard.Add Vendor')
-                    @elseif($type === 'user')
-                        @lang('dashboard.Add User')
-                    @endif
-                </a>
+                    @can('users.create')
+                        <a href="{{ route('users.create', ['type' => $type]) }}" class="btn btn-primary">
+                            @if($type === 'admin')
+                                @lang('dashboard.Add Admin')
+                            @elseif($type === 'vendor')
+                                @lang('dashboard.Add Vendor')
+                            @elseif($type === 'user')
+                                @lang('dashboard.Add User')
+                            @endif
+                        </a>
+                    @endcan
                 @endif
             </div>
             <div class="card-body">
@@ -129,20 +131,24 @@
                                     </td>
                                     <td>{{ $user->created_at ? $user->created_at->format('Y-m-d') : __('dashboard.N/A') }}</td>
                                     <td>
-                                        <a href="{{ route('users.edit', $user) }}" class="btn btn-primary">
-                                            <i class="fa fa-edit"></i>
-                                        </a>
-                                        @if ($user->id !== auth()->id())
-                                            <form action="{{ route('users.destroy', $user) }}" method="POST"
-                                                class="d-inline"
-                                                onsubmit="return confirm('@lang('dashboard.Are you sure you want to delete this user?')');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger">
-                                                    <i class="fa fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        @endif
+                                        @can('users.edit')
+                                            <a href="{{ route('users.edit', $user) }}" class="btn btn-primary">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                        @endcan
+                                        @can('users.delete')
+                                            @if ($user->id !== auth()->id())
+                                                <form action="{{ route('users.destroy', $user) }}" method="POST"
+                                                    class="d-inline"
+                                                    onsubmit="return confirm('@lang('dashboard.Are you sure you want to delete this user?')');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endcan
                                     </td>
                                 </tr>
                             @empty

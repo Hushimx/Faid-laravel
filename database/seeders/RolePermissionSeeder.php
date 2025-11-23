@@ -65,11 +65,11 @@ class RolePermissionSeeder extends Seeder
       'services.manage',
 
       // Products permissions
-      'products.view',
-      'products.create',
-      'products.edit',
-      'products.delete',
-      'products.manage',
+      // 'products.view',
+      // 'products.create',
+      // 'products.edit',
+      // 'products.delete',
+      // 'products.manage',
 
       // Tickets permissions
       'tickets.view',

@@ -75,14 +75,14 @@
                                 class="side-menu__label">@lang('dashboard.Services')</span></a>
                     </li>
                 @endcan
-                <!-- @can('products.view')
+                {{-- @can('products.view')
                     <li class="slide">
                         <a class="side-menu__item has-link {{ handleActiveSidebar(['products.*']) }}"
                             data-bs-toggle="slide" href="{{ route('products.index') }}"><i
                                 class="side-menu__icon fe fe-package"></i><span
                                 class="side-menu__label">@lang('dashboard.Products')</span></a>
                     </li>
-                @endcan -->
+                @endcan --}}
                 @can('roles.view')
                     <li class="slide">
                         <a class="side-menu__item has-link {{ handleActiveSidebar(['roles.*']) }}" data-bs-toggle="slide"

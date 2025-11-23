@@ -78,10 +78,10 @@ class User extends Authenticatable
     /**
      * Products created by vendor.
      */
-    public function products()
-    {
-        return $this->hasMany(Product::class, 'vendor_id');
-    }
+    // public function products()
+    // {
+    //     return $this->hasMany(Product::class, 'vendor_id');
+    // }
 
     /**
      * Get the full name attribute (for backward compatibility).

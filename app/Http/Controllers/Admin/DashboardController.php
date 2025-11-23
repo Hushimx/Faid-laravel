@@ -30,14 +30,12 @@ class DashboardController extends Controller
 
         // Products Statistics
         $productsStats = [
-            'total' => Product::count(),
-            'active' => Product::where('status', Product::STATUS_ACTIVE)
-                ->where('admin_status', '!=', Product::ADMIN_STATUS_SUSPENDED)
-                ->count(),
-            'suspended' => Product::where('admin_status', Product::ADMIN_STATUS_SUSPENDED)->count(),
-            'pending' => Product::where('status', Product::STATUS_PENDING)->count(),
-            'draft' => Product::where('status', Product::STATUS_DRAFT)->count(),
-            'out_of_stock' => Product::where('stock_quantity', '<=', 0)->count(),
+            'total' => 0, // Product::count(),
+            'active' => 0, // Product::where('status', Product::STATUS_ACTIVE)->where('admin_status', '!=', Product::ADMIN_STATUS_SUSPENDED)->count(),
+            'suspended' => 0, // Product::where('admin_status', Product::ADMIN_STATUS_SUSPENDED)->count(),
+            'pending' => 0, // Product::where('status', Product::STATUS_PENDING)->count(),
+            'draft' => 0, // Product::where('status', Product::STATUS_DRAFT)->count(),
+            'out_of_stock' => 0, // Product::where('stock_quantity', '<=', 0)->count(),
         ];
 
         // Services Statistics
@@ -65,10 +63,11 @@ class DashboardController extends Controller
         ];
 
         // Recent Activity (Last 30 days)
-        $recentProducts = Product::with(['vendor', 'category'])
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+        $recentProducts = [];
+        // $recentProducts = Product::with(['vendor', 'category'])
+        //     ->orderBy('created_at', 'desc')
+        //     ->limit(5)
+        //     ->get();
 
         $recentServices = Service::with(['vendor', 'category'])
             ->orderBy('created_at', 'desc')
@@ -101,7 +100,7 @@ class DashboardController extends Controller
             $date = now()->subDays($i)->format('Y-m-d');
             $dates[] = now()->subDays($i)->format('M d');
 
-            $productsData[] = Product::whereDate('created_at', $date)->count();
+            $productsData[] = 0; // Product::whereDate('created_at', $date)->count();
             $servicesData[] = Service::whereDate('created_at', $date)->count();
         }
 

@@ -5,7 +5,7 @@
     <!-- Statistics Cards Row 1: Users & Products -->
     <div class="row g-3 mb-4">
         <!-- Total Users -->
-        <div class="col-xl-3 col-lg-6 col-md-6">
+        <div class="col-xl-4 col-lg-6 col-md-6">
             <div class="card custom-card shadow-sm border-0 overflow-hidden h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between mb-3">
@@ -40,44 +40,11 @@
             </div>
         </div>
 
-        <!-- Total Products -->
-        <div class="col-xl-3 col-lg-6 col-md-6">
-            <div class="card custom-card shadow-sm border-0 overflow-hidden h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div>
-                            <p class="text-muted mb-1">@lang('dashboard.Total Products')</p>
-                            <h2 class="fw-bold mb-0">{{ $productsStats['total'] }}</h2>
-                        </div>
-                        <div class="rounded-circle bg-success-transparent text-success d-flex align-items-center justify-content-center"
-                            style="width: 60px; height: 60px;">
-                            <i class="fe fe-package fs-3"></i>
-                        </div>
-                    </div>
-                    <div class="row g-2 mt-2">
-                        <div class="col-6">
-                            <small class="text-muted d-block">@lang('dashboard.Active')</small>
-                            <p class="mb-0 fw-semibold text-success">{{ $productsStats['active'] }}</p>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">@lang('dashboard.Out of Stock')</small>
-                            <p class="mb-0 fw-semibold text-danger">{{ $productsStats['out_of_stock'] }}</p>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">@lang('dashboard.Pending')</small>
-                            <p class="mb-0 fw-semibold text-warning">{{ $productsStats['pending'] }}</p>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">@lang('dashboard.Draft')</small>
-                            <p class="mb-0 fw-semibold text-secondary">{{ $productsStats['draft'] }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Total Products (Hidden) -->
+        {{-- <div class="col-xl-3 col-lg-6 col-md-6"> ... </div> --}}
 
         <!-- Total Services -->
-        <div class="col-xl-3 col-lg-6 col-md-6">
+        <div class="col-xl-4 col-lg-6 col-md-6">
             <div class="card custom-card shadow-sm border-0 overflow-hidden h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between mb-3">
@@ -113,7 +80,7 @@
         </div>
 
         <!-- Total Categories -->
-        <div class="col-xl-3 col-lg-6 col-md-6">
+        <div class="col-xl-4 col-lg-6 col-md-6">
             <div class="card custom-card shadow-sm border-0 overflow-hidden h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between mb-3">
@@ -143,7 +110,7 @@
     </div>
 
     <!-- Statistics Cards Row 2: Detailed Stats -->
-    <div class="row g-3 mb-4">
+    {{-- <div class="row g-3 mb-4">
         <!-- Products Status -->
         <div class="col-xl-3 col-lg-6 col-md-6">
             <div class="card custom-card shadow-sm border-0 h-100">
@@ -216,7 +183,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Statistics Cards Row 3: Additional Stats -->
     <div class="row g-3 mb-4">
@@ -303,7 +270,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header border-bottom">
                     <h4 class="card-title mb-0">@lang('dashboard.Recent Activity')</h4>
-                    <small class="text-muted">@lang('dashboard.Products and Services created in last 7 days')</small>
+                    <small class="text-muted">@lang('dashboard.Services created in last 7 days')</small>
                 </div>
                 <div class="card-body">
                     <div id="activityChart" style="min-height: 300px;"></div>
@@ -315,7 +282,7 @@
         <div class="col-xl-4 col-lg-12">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header border-bottom">
-                    <h4 class="card-title mb-0">@lang('dashboard.Products Status')</h4>
+                    <h4 class="card-title mb-0">@lang('dashboard.Services Status')</h4>
                 </div>
                 <div class="card-body">
                     <div id="productsStatusChart" style="min-height: 300px;"></div>
@@ -327,7 +294,7 @@
     <!-- Recent Items Row -->
     <div class="row g-3 mb-4">
         <!-- Recent Products -->
-        <div class="col-xl-6 col-lg-12">
+        {{-- <div class="col-xl-6 col-lg-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header border-bottom d-flex justify-content-between align-items-center">
                     <div>
@@ -385,10 +352,10 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
         <!-- Recent Services -->
-        <div class="col-xl-6 col-lg-12">
+        <div class="col-xl-12 col-lg-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header border-bottom d-flex justify-content-between align-items-center">
                     <div>
@@ -455,9 +422,6 @@
                 // Activity Chart (Line Chart)
                 var activityOptions = {
                     series: [{
-                        name: '@lang('dashboard.Products')',
-                        data: @json($chartData['products'])
-                    }, {
                         name: '@lang('dashboard.Services')',
                         data: @json($chartData['services'])
                     }],
@@ -471,7 +435,7 @@
                             enabled: false
                         }
                     },
-                    colors: ['#22c55e', '#3b82f6'],
+                    colors: ['#3b82f6'],
                     dataLabels: {
                         enabled: false
                     },
@@ -526,13 +490,13 @@
                 var activityChart = new ApexCharts(document.querySelector("#activityChart"), activityOptions);
                 activityChart.render();
 
-                // Products Status Chart (Donut Chart)
+                // Services Status Chart (Donut Chart)
                 var statusOptions = {
                     series: [
-                        {{ $productsStats['active'] }},
-                        {{ $productsStats['suspended'] }},
-                        {{ $productsStats['pending'] }},
-                        {{ $productsStats['draft'] }}
+                        {{ $servicesStats['active'] }},
+                        {{ $servicesStats['suspended'] }},
+                        {{ $servicesStats['pending'] }},
+                        {{ $servicesStats['draft'] }}
                     ],
                     chart: {
                         type: 'donut',
@@ -564,7 +528,7 @@
                                         show: true,
                                         label: '@lang('dashboard.Total')',
                                         formatter: function() {
-                                            return {{ $productsStats['total'] }};
+                                            return {{ $servicesStats['total'] }};
                                         }
                                     }
                                 }

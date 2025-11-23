@@ -58,18 +58,18 @@ Route::controller(ServiceController::class)->group(function () {
 });
 
 // Products Routes
-Route::controller(ProductController::class)->group(function () {
-    // Public routes (visible products only)
-    Route::get('products', 'index');
-    Route::get('products/{product}', 'show');
+// Route::controller(ProductController::class)->group(function () {
+//     // Public routes (visible products only)
+//     Route::get('products', 'index');
+//     Route::get('products/{product}', 'show');
 
-    // Vendor routes only (authenticated vendors)
-    Route::middleware(['auth:sanctum', 'ensure-verified-user'])->group(function () {
-        Route::post('products', 'store');
-        Route::put('products/{product}', 'update');
-        Route::delete('products/{product}', 'destroy');
-    });
-});
+//     // Vendor routes only (authenticated vendors)
+//     Route::middleware(['auth:sanctum', 'ensure-verified-user'])->group(function () {
+//         Route::post('products', 'store');
+//         Route::put('products/{product}', 'update');
+//         Route::delete('products/{product}', 'destroy');
+//     });
+// });
 
 // Tickets Routes (for users and vendors)
 Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(TicketController::class)->group(function () {

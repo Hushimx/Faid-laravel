@@ -118,22 +118,22 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Products Routes
-    Route::prefix('products')->name('products.')->controller(ProductController::class)->group(function () {
-        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
-            ['name' => 'Products']
-        ]);
-        Route::get('/{product}', 'show')->name('show')->defaults('breadcrumbs', [
-            ['name' => 'Products', 'url' => 'products.index'],
-            ['name' => 'View Product']
-        ]);
-        Route::get('/{product}/edit', 'edit')->name('edit')->defaults('breadcrumbs', [
-            ['name' => 'Products', 'url' => 'products.index'],
-            ['name' => 'Edit Product']
-        ]);
-        Route::put('/{product}', 'update')->name('update');
-        Route::post('/{product}/status', 'updateStatus')->name('status.update');
-        Route::delete('/{product}', 'destroy')->name('destroy');
-    });
+    // Route::prefix('products')->name('products.')->controller(ProductController::class)->group(function () {
+    //     Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+    //         ['name' => 'Products']
+    //     ]);
+    //     Route::get('/{product}', 'show')->name('show')->defaults('breadcrumbs', [
+    //         ['name' => 'Products', 'url' => 'products.index'],
+    //         ['name' => 'View Product']
+    //     ]);
+    //     Route::get('/{product}/edit', 'edit')->name('edit')->defaults('breadcrumbs', [
+    //         ['name' => 'Products', 'url' => 'products.index'],
+    //         ['name' => 'Edit Product']
+    //     ]);
+    //     Route::put('/{product}', 'update')->name('update');
+    //     Route::post('/{product}/status', 'updateStatus')->name('status.update');
+    //     Route::delete('/{product}', 'destroy')->name('destroy');
+    // });
     // Users Routes
     Route::prefix('users')->name('users.')->controller(UserController::class)->group(function () {
         Route::get('/all', 'index')->name('all')->defaults('breadcrumbs', [

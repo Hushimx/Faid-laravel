@@ -210,6 +210,38 @@
     </div>
     </div>
 
+    {{-- FAQs Section --}}
+    @if ($service->faqs->count() > 0)
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">@lang('dashboard.FAQs')</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="faqAccordion">
+                    @foreach ($service->faqs as $index => $faq)
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="faqHeading{{ $index }}">
+                                <button class="accordion-button {{ $index > 0 ? 'collapsed' : '' }}" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#faqCollapse{{ $index }}"
+                                    aria-expanded="{{ $index == 0 ? 'true' : 'false' }}"
+                                    aria-controls="faqCollapse{{ $index }}">
+                                    <strong>{{ $faq->question }}</strong>
+                                </button>
+                            </h2>
+                            <div id="faqCollapse{{ $index }}"
+                                class="accordion-collapse collapse {{ $index == 0 ? 'show' : '' }}"
+                                aria-labelledby="faqHeading{{ $index }}" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    {{ $faq->answer }}
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- @section('scripts')
     <script>
         // Initialize the map

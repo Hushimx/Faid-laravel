@@ -91,6 +91,15 @@ class Service extends Model
     }
 
     /**
+     * FAQs relation.
+     */
+    public function faqs()
+    {
+        return $this->hasMany(ServiceFaq::class)->orderBy('order')->orderBy('id');
+    }
+
+
+    /**
      * Average rating (float) for the service.
      */
     public function averageRating(): ?float

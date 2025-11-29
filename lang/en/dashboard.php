@@ -308,4 +308,12 @@ return [
     'reviews' => 'reviews',
     'Fixed' => 'Fixed',
     'Edit Service' => 'Edit Service',
+    'FAQs' => 'FAQs',
+    'Frequently Asked Questions' => 'Frequently Asked Questions',
+    'Question' => 'Question',
+    'Answer' => 'Answer',
+    'Add FAQ' => 'Add FAQ',
+    'Remove FAQ' => 'Remove FAQ',
+    'Order' => 'Order',
+    'No FAQs found' => 'No FAQs found',
 ];

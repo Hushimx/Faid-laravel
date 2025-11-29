@@ -55,6 +55,18 @@ class ServiceResource extends JsonResource
       'rating' => (float) ($this->reviews_avg_rating ?? 0),
       'reviews_count' => (int) ($this->reviews_count ?? 0),
       'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
+
+      // FAQs
+      'faqs' => $this->whenLoaded('faqs', function () {
+        return $this->faqs->map(function ($faq) {
+          return [
+            'id' => $faq->id,
+            'question' => $faq->question,
+            'answer' => $faq->answer,
+            'order' => $faq->order,
+          ];
+        });
+      }),
     ];
   }
 }

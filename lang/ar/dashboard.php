@@ -276,4 +276,12 @@ return [
     'All Types' => 'جميع الأنواع',
     'Vendors Tickets' => 'تذاكر التجار',
     'Users Tickets' => 'تذاكر المستخدمين',
+    'FAQs' => 'الأسئلة الشائعة',
+    'Frequently Asked Questions' => 'أسئلة متكررة',
+    'Question' => 'السؤال',
+    'Answer' => 'الإجابة',
+    'Add FAQ' => 'إضافة سؤال',
+    'Remove FAQ' => 'إزالة السؤال',
+    'Order' => 'الترتيب',
+    'No FAQs found' => 'لا توجد أسئلة شائعة',
 ];

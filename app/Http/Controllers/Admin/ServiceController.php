@@ -18,7 +18,7 @@ class ServiceController extends Controller
   public function index(Request $request): View
   {
     $this->authorize('services.view');
-    
+
     $filters = [
       'search' => $request->string('search')->toString(),
       'status' => $request->string('status')->toString(),
@@ -85,8 +85,8 @@ class ServiceController extends Controller
   public function show(Service $service): View
   {
     $this->authorize('services.view');
-    
-    $service->load(['category', 'vendor', 'images', 'videos', 'reviews.user']);
+
+    $service->load(['category', 'vendor', 'images', 'videos', 'reviews.user', 'faqs']);
     return view('pages.services-show', compact('service'));
   }
 
@@ -96,8 +96,8 @@ class ServiceController extends Controller
   public function edit(Service $service): View
   {
     $this->authorize('services.edit');
-    
-    $service->load(['category', 'vendor', 'images', 'videos']);
+
+    $service->load(['category', 'vendor', 'images', 'videos', 'faqs']);
     $categories = \App\Models\Category::all(['id', 'name']);
     return view('pages.services-edit', compact('service', 'categories'));
   }
@@ -108,7 +108,7 @@ class ServiceController extends Controller
   public function update(Request $request, Service $service): RedirectResponse
   {
     $this->authorize('services.edit');
-    
+
     $validated = $request->validate([
       'category_id' => ['required', 'exists:categories,id'],
       'title' => ['required', 'array'],
@@ -120,6 +120,14 @@ class ServiceController extends Controller
       'price' => ['nullable', 'required_if:price_type,fixed', 'numeric', 'min:0', 'max:999999.99'],
       'status' => ['required', Rule::in(Service::vendorStatuses())],
       'attributes' => ['nullable'],
+      'faqs' => ['nullable', 'array'],
+      'faqs.*.id' => ['nullable', 'exists:service_faqs,id'],
+      'faqs.*.question' => ['required', 'array'],
+      'faqs.*.question.*' => ['nullable', 'string', 'max:500'],
+      'faqs.*.answer' => ['required', 'array'],
+      'faqs.*.answer.*' => ['nullable', 'string', 'max:2000'],
+      'faqs.*.order' => ['nullable', 'integer', 'min:0'],
+      'faqs.*.delete' => ['nullable', 'boolean'],
     ]);
 
     $service->category_id = $validated['category_id'];
@@ -146,6 +154,50 @@ class ServiceController extends Controller
 
     $service->save();
 
+    // Handle FAQs
+    if ($request->has('faqs')) {
+      $faqIds = [];
+      foreach ($request->input('faqs', []) as $index => $faqData) {
+        // Skip if marked for deletion
+        if (!empty($faqData['delete'])) {
+          if (!empty($faqData['id'])) {
+            \App\Models\ServiceFaq::where('id', $faqData['id'])
+              ->where('service_id', $service->id)
+              ->delete();
+          }
+          continue;
+        }
+
+        // Normalize translations
+        $question = normalize_translations($faqData['question']);
+        $answer = normalize_translations($faqData['answer']);
+        $order = $faqData['order'] ?? $index;
+
+        if (!empty($faqData['id'])) {
+          // Update existing FAQ
+          $faq = \App\Models\ServiceFaq::where('id', $faqData['id'])
+            ->where('service_id', $service->id)
+            ->first();
+          if ($faq) {
+            $faq->question = $question;
+            $faq->answer = $answer;
+            $faq->order = $order;
+            $faq->save();
+            $faqIds[] = $faq->id;
+          }
+        } else {
+          // Create new FAQ
+          $faq = \App\Models\ServiceFaq::create([
+            'service_id' => $service->id,
+            'question' => $question,
+            'answer' => $answer,
+            'order' => $order,
+          ]);
+          $faqIds[] = $faq->id;
+        }
+      }
+    }
+
     return redirect()->route('services.show', $service)
       ->with('success', __('dashboard.Service updated successfully'));
   }
@@ -156,7 +208,7 @@ class ServiceController extends Controller
   public function updateStatus(Request $request, Service $service): RedirectResponse
   {
     $this->authorize('services.manage');
-    
+
     $validated = $request->validate([
       'admin_status' => ['nullable', Rule::in([null, Service::ADMIN_STATUS_SUSPENDED])],
     ]);
@@ -177,7 +229,7 @@ class ServiceController extends Controller
   public function destroy(Service $service): RedirectResponse
   {
     $this->authorize('services.delete');
-    
+
     // Delete associated media files
     foreach ($service->media as $media) {
       if ($media->path && Storage::exists($media->path)) {
@@ -210,7 +262,7 @@ class ServiceController extends Controller
   public function destroyReview(Service $service, \App\Models\Review $review)
   {
     $this->authorize('services.manage');
-    
+
     // Verify the review belongs to this service
     if ($review->service_id !== $service->id) {
       return redirect()->back()->with('error', 'Review not found');

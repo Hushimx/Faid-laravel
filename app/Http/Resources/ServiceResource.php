@@ -21,6 +21,8 @@ class ServiceResource extends JsonResource
       'description' => $this->description,
       'price_type' => $this->price_type,
       'price' => $this->price ? (float) $this->price : null,
+      'address' => $this->address,
+      'city' => $this->city,
       'status' => $this->status,
       'admin_status' => $this->admin_status,
       'is_visible' => $this->isVisible(),

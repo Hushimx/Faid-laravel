@@ -80,6 +80,21 @@
                 </div>
 
                 <div class="row g-3 mt-3">
+                    <div class="col-md-8">
+                        <label class="form-label">@lang('dashboard.Address')</label>
+                        <input type="text" class="form-control" name="address" 
+                            value="{{ old('address', $service->address) }}" 
+                            placeholder="@lang('dashboard.Enter address')">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">@lang('dashboard.City')</label>
+                        <input type="text" class="form-control" name="city" 
+                            value="{{ old('city', $service->city) }}" 
+                            placeholder="@lang('dashboard.Enter city')">
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-3">
                     <div class="col-12">
                         <label class="form-label">@lang('dashboard.Attributes') (JSON)</label>
                         <textarea class="form-control" rows="5" name="attributes" placeholder='{"key": "value"}'>{{ old('attributes', $service->attributes ? json_encode($service->attributes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '') }}</textarea>

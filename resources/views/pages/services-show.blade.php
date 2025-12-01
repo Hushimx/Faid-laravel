@@ -67,6 +67,14 @@
                                 </td>
                             </tr>
                             <tr>
+                                <th class="bg-light">@lang('dashboard.Address')</th>
+                                <td>{{ $service->address ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">@lang('dashboard.City')</th>
+                                <td>{{ $service->city ?? '-' }}</td>
+                            </tr>
+                            <tr>
                                 <th class="bg-light">@lang('dashboard.Status')</th>
                                 <td>
                                     <span

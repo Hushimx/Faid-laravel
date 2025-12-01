@@ -159,6 +159,8 @@ class ServiceController extends Controller
             $service->description = $this->normalizeOptionalTranslations($request->input('description'));
             $service->price_type = $validated['price_type'];
             $service->price = $validated['price'] ?? null;
+            $service->address = $validated['address'] ?? null;
+            $service->city = $validated['city'] ?? null;
             $service->status = $validated['status'];
             $service->attributes = $validated['attributes'] ?? null;
             $service->published_at = $validated['status'] === Service::STATUS_ACTIVE ? now() : null;
@@ -217,6 +219,8 @@ class ServiceController extends Controller
             $service->attributes = $validated['attributes'] ?? null;
             $service->lat = $validated['lat'] ?? $service->lat;
             $service->lng = $validated['lng'] ?? $service->lng;
+            $service->address = $validated['address'] ?? $service->address;
+            $service->city = $validated['city'] ?? $service->city;
 
             // Update published_at based on status
             if ($service->status === Service::STATUS_ACTIVE && !$service->published_at) {
@@ -295,6 +299,8 @@ class ServiceController extends Controller
             'description.*' => ['nullable', 'string', 'max:5000'],
             'price_type' => ['required', Rule::in(Service::priceTypes())],
             'price' => ['nullable', 'required_if:price_type,fixed', 'numeric', 'min:0', 'max:999999.99'],
+            'address' => ['nullable', 'string', 'max:1000'],
+            'city' => ['nullable', 'string', 'max:100'],
             'status' => ['required', Rule::in(Service::vendorStatuses())],
             'attributes' => ['nullable', 'array'],
             'media' => ['nullable', 'array'],

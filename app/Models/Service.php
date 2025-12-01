@@ -31,6 +31,8 @@ class Service extends Model
         'description',
         'price_type',
         'price',
+        'address',
+        'city',
         'status',
         'admin_status',
         'attributes',

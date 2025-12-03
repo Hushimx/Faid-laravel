@@ -222,7 +222,7 @@ class ServiceController extends Controller
             $service->description = $this->normalizeOptionalTranslations($request->input('description'));
             $service->price_type = $validated['price_type'];
             $service->price = $validated['price'] ?? null;
-            $service->status = $validated['status'];
+            $service->status = Service::STATUS_PENDING;
             $service->attributes = $validated['attributes'] ?? null;
             $service->lat = $validated['lat'] ?? $service->lat;
             $service->lng = $validated['lng'] ?? $service->lng;

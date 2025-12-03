@@ -105,4 +105,40 @@ class ServiceCityTest extends TestCase
         $this->assertNotNull($service->city_id);
         $this->assertEquals('Updated City', $service->cityRelationship->getTranslation('name', 'en'));
     }
+
+    public function test_can_filter_services_by_city_id()
+    {
+        $vendor = User::factory()->create(['type' => 'vendor']);
+        $category = Category::create(['name' => ['en' => 'Test Category'], 'slug' => 'test-category']);
+
+        $country = Country::create(['id' => 1, 'name' => ['en' => 'Saudi Arabia']]);
+        $city1 = City::create(['country_id' => 1, 'name' => ['en' => 'Riyadh']]);
+        $city2 = City::create(['country_id' => 1, 'name' => ['en' => 'Jeddah']]);
+
+        $service1 = Service::create([
+            'vendor_id' => $vendor->id,
+            'category_id' => $category->id,
+            'title' => ['en' => 'Service 1'],
+            'price_type' => 'fixed',
+            'price' => 100,
+            'status' => 'active',
+            'city_id' => $city1->id,
+        ]);
+
+        $service2 = Service::create([
+            'vendor_id' => $vendor->id,
+            'category_id' => $category->id,
+            'title' => ['en' => 'Service 2'],
+            'price_type' => 'fixed',
+            'price' => 200,
+            'status' => 'active',
+            'city_id' => $city2->id,
+        ]);
+
+        $response = $this->getJson("/api/services?city_id={$city1->id}");
+
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json('data'));
+        $this->assertEquals($service1->id, $response->json('data.0.id'));
+    }
 }

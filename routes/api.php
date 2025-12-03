@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\TicketMessageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\OfferController;
+use App\Http\Controllers\Api\CityController;
 
 
 
@@ -37,6 +38,11 @@ Route::get('/offers', [OfferController::class, 'index']);
 Route::controller(CategoryController::class)->group(function () {
     Route::get('categories', 'index');
     Route::get('categories/{category}', 'show');
+});
+
+// Cities Routes (Public - Read-only)
+Route::controller(CityController::class)->group(function () {
+    Route::get('cities', 'index');
 });
 
 // Services Routes

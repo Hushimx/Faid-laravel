@@ -181,7 +181,7 @@ class Service extends Model
     /**
      * City relation.
      */
-    public function cityRelationship(): BelongsTo
+    public function city(): BelongsTo
     {
         return $this->belongsTo(City::class, 'city_id');
     }

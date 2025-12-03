@@ -28,6 +28,7 @@ class ServiceController extends Controller
             'search' => $request->string('search')->toString(),
             'category_id' => $request->integer('category_id') ?: null,
             'vendor_id' => $request->integer('vendor_id') ?: null,
+            'city_id' => $request->integer('city_id') ?: null,
             'status' => $request->string('status')->toString(),
             'price_min' => $request->has('price_min') ? (float) $request->input('price_min') : null,
             'price_max' => $request->has('price_max') ? (float) $request->input('price_max') : null,
@@ -74,6 +75,10 @@ class ServiceController extends Controller
 
         if ($filters['category_id']) {
             $query->where('category_id', $filters['category_id']);
+        }
+
+        if ($filters['city_id']) {
+            $query->where('city_id', $filters['city_id']);
         }
 
         if ($filters['vendor_id'] && $isVendor && $filters['vendor_id'] == $user->id) {

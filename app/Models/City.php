@@ -8,9 +8,11 @@ use Spatie\Translatable\HasTranslations;
 class City extends Model
 {
     use HasTranslations;
+    protected $guarded = [];
     public $translatable = ['name'];
 
-    public function country() {
+    public function country()
+    {
         return $this->belongsTo(Country::class);
     }
 }

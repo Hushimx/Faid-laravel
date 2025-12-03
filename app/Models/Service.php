@@ -32,7 +32,7 @@ class Service extends Model
         'price_type',
         'price',
         'address',
-        'city',
+        'city_id',
         'status',
         'admin_status',
         'attributes',
@@ -177,5 +177,12 @@ class Service extends Model
             self::PRICE_TYPE_FIXED,
             self::PRICE_TYPE_NEGOTIABLE,
         ];
+    }
+    /**
+     * City relation.
+     */
+    public function cityRelationship(): BelongsTo
+    {
+        return $this->belongsTo(City::class, 'city_id');
     }
 }

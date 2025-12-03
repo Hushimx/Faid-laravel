@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Models\City;
+use App\Models\Country;
 
 class ServiceController extends Controller
 {
@@ -160,8 +162,8 @@ class ServiceController extends Controller
             $service->price_type = $validated['price_type'];
             $service->price = $validated['price'] ?? null;
             $service->address = $validated['address'] ?? null;
-            $service->city = $validated['city'] ?? null;
-            $service->status = $validated['status'];
+            $service->city_id = $this->handleCityLogic($validated['city'] ?? null);
+            $service->status = Service::STATUS_PENDING;
             $service->attributes = $validated['attributes'] ?? null;
             $service->published_at = $validated['status'] === Service::STATUS_ACTIVE ? now() : null;
             $service->lat = $validated['lat'] ?? null;
@@ -220,7 +222,9 @@ class ServiceController extends Controller
             $service->lat = $validated['lat'] ?? $service->lat;
             $service->lng = $validated['lng'] ?? $service->lng;
             $service->address = $validated['address'] ?? $service->address;
-            $service->city = $validated['city'] ?? $service->city;
+            if (isset($validated['city'])) {
+                $service->city_id = $this->handleCityLogic($validated['city']);
+            }
 
             // Update published_at based on status
             if ($service->status === Service::STATUS_ACTIVE && !$service->published_at) {
@@ -432,5 +436,41 @@ class ServiceController extends Controller
                 $faqIds[] = $faq->id;
             }
         }
+    }
+
+    /**
+     * Handle city and country logic.
+     */
+    protected function handleCityLogic(?string $cityName): ?int
+    {
+        if (empty($cityName)) {
+            return null;
+        }
+
+        // Check/Create Country ID 1 (Saudi Arabia)
+        $country = Country::find(1);
+        if (!$country) {
+            $country = Country::create([
+                'id' => 1,
+                'name' => ['en' => 'Saudi Arabia', 'ar' => 'السعودية'],
+            ]);
+        }
+
+        // Check/Create City
+        // Search in both English and Arabic translations
+        $city = City::where('country_id', $country->id)
+            ->where(function ($query) use ($cityName) {
+                $query->where('name->en', $cityName)
+                    ->orWhere('name->ar', $cityName);
+            })->first();
+
+        if (!$city) {
+            $city = City::create([
+                'country_id' => $country->id,
+                'name' => ['en' => $cityName, 'ar' => $cityName],
+            ]);
+        }
+
+        return $city->id;
     }
 }

@@ -25,6 +25,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
+            'fcm_token' => ['nullable', 'string'],
         ]);
 
         $user = User::where('email', $validated['email'])->first();
@@ -50,6 +51,19 @@ class AuthController extends Controller
         // Create token
         $deviceName = $request->userAgent() ?: 'unknown';
         $token = $user->createToken($deviceName)->plainTextToken;
+
+        // Save FCM token if provided
+        if ($request->filled('fcm_token')) {
+            $user->fcmTokens()->updateOrCreate(
+                ['token' => $request->fcm_token],
+                [
+                    'device_type' => 'mobile',
+                    'device_name' => $deviceName,
+                    'is_active' => true,
+                    'last_used_at' => now(),
+                ]
+            );
+        }
 
         return ApiResponse::success(
             [
@@ -204,6 +218,11 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
+        // Delete FCM token if provided
+        if ($request->filled('fcm_token')) {
+            $user->fcmTokens()->where('token', $request->fcm_token)->delete();
+        }
+
         // Revoke all tokens
         $user->tokens()->delete();
         return ApiResponse::success(null, 'Logged out successfully');
@@ -221,6 +240,7 @@ class AuthController extends Controller
             'phone' => ['required', 'string', 'max:20', new Phone, 'unique:users,phone'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'type' => ['nullable', 'string', Rule::in(['user', 'vendor'])],
+            'fcm_token' => ['nullable', 'string'],
         ];
 
         $type = $request->input('type', 'user');
@@ -288,6 +308,19 @@ class AuthController extends Controller
             // Create token
             $deviceName = $request->userAgent() ?: 'unknown';
             $token = $user->createToken($deviceName)->plainTextToken;
+
+            // Save FCM token if provided
+            if ($request->filled('fcm_token')) {
+                $user->fcmTokens()->updateOrCreate(
+                    ['token' => $request->fcm_token],
+                    [
+                        'device_type' => 'mobile',
+                        'device_name' => $deviceName,
+                        'is_active' => true,
+                        'last_used_at' => now(),
+                    ]
+                );
+            }
 
             // Return created user with transformed data
             return ApiResponse::success(

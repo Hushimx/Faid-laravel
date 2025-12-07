@@ -45,6 +45,8 @@ class CityController extends Controller
             $cities->getCollection()->map(fn($city) => new CityResource($city))
         );
 
+        
+
         return ApiResponse::paginated(
             $cities,
             'Cities retrieved successfully',

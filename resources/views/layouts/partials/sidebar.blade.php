@@ -104,6 +104,13 @@
                                 class="side-menu__label">@lang('dashboard.Offers')</span></a>
                     </li>
                 @endcan
+                {{-- @can('notifications.view') --}}
+                    <li class="slide">
+                        <a class="side-menu__item has-link {{ handleActiveSidebar(['notifications.*']) }}" data-bs-toggle="slide"
+                            href="{{ route('notifications.index') }}"><i class="side-menu__icon fe fe-bell"></i><span
+                                class="side-menu__label">@lang('dashboard.Notifications')</span></a>
+                    </li>
+                {{-- @endcan --}}
                 <li class="slide">
                     <a class="side-menu__item has-link" data-bs-toggle="slide" href="{{ url('translations') }}"
                         target="_blank"><i class="side-menu__icon fa fa-language"></i><span

@@ -100,3 +100,17 @@ Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(\App\Htt
     Route::get('chats/{chat}/messages', 'messages');
     Route::post('chats/{chat}/messages', 'send');
 });
+
+// FCM Token Routes (Deprecated - Handled in Auth)
+// Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(\App\Http\Controllers\Api\FcmTokenController::class)->group(function () {
+//     Route::get('fcm-tokens', 'index');
+//     Route::post('fcm-tokens/register', 'register');
+//     Route::delete('fcm-tokens', 'delete');
+// });
+
+// User Notifications
+Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(\App\Http\Controllers\Api\NotificationController::class)->group(function () {
+    Route::get('notifications', 'index');
+    Route::post('notifications/{id}/read', 'markAsRead');
+    Route::post('notifications/read-all', 'markAllAsRead');
+});

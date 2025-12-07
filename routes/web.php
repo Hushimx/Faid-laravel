@@ -214,6 +214,22 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{offer}', 'update')->name('update');
         Route::delete('/{offer}', 'destroy')->name('destroy');
     });
+
+    // Notifications (Admin)
+    Route::prefix('notifications')->name('notifications.')->controller(\App\Http\Controllers\Admin\NotificationController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.Notifications')]
+        ]);
+        Route::get('/create', 'create')->name('create')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.Notifications'), 'url' => 'notifications.index'],
+            ['name' => __('dashboard.Send Notification')]
+        ]);
+        Route::post('/', 'store')->name('store');
+        Route::get('/{notification}', 'show')->name('show')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.Notifications'), 'url' => 'notifications.index'],
+            ['name' => __('dashboard.Notification Details')]
+        ]);
+    });
 });
 
 

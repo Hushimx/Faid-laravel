@@ -130,4 +130,28 @@ class User extends Authenticatable
     {
         return $this->hasMany(TicketMessage::class);
     }
+
+    /**
+     * FCM tokens associated with the user.
+     */
+    public function fcmTokens()
+    {
+        return $this->hasMany(FcmToken::class);
+    }
+
+    /**
+     * Active FCM tokens only.
+     */
+    public function activeFcmTokens()
+    {
+        return $this->hasMany(FcmToken::class)->where('is_active', true);
+    }
+
+    /**
+     * Notifications sent by admin.
+     */
+    public function sentNotifications()
+    {
+        return $this->hasMany(Notification::class, 'admin_id');
+    }
 }

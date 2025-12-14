@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Mail\SendOtp;
+use App\Models\FcmToken;
 use App\Models\User;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
@@ -54,9 +55,11 @@ class AuthController extends Controller
 
         // Save FCM token if provided
         if ($request->filled('fcm_token')) {
-            $user->fcmTokens()->updateOrCreate(
+            // Search globally since token has unique constraint
+            FcmToken::updateOrCreate(
                 ['token' => $request->fcm_token],
                 [
+                    'user_id' => $user->id,
                     'device_type' => 'mobile',
                     'device_name' => $deviceName,
                     'is_active' => true,
@@ -311,9 +314,11 @@ class AuthController extends Controller
 
             // Save FCM token if provided
             if ($request->filled('fcm_token')) {
-                $user->fcmTokens()->updateOrCreate(
+                // Search globally since token has unique constraint
+                FcmToken::updateOrCreate(
                     ['token' => $request->fcm_token],
                     [
+                        'user_id' => $user->id,
                         'device_type' => 'mobile',
                         'device_name' => $deviceName,
                         'is_active' => true,

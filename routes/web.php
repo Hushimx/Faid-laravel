@@ -19,6 +19,15 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/test', 'test');
 
+// Public Routes
+
+Route::get('/privacy', function () {
+    return view('privacy');
+})->name('privacy');
+
+Route::get('/terms', function () {
+    return view('terms');
+})->name('terms');
 
 // Language Route
 Route::get('change-locale/{locale}', function ($locale) {
@@ -232,6 +241,18 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+// Public Routes (placed after authenticated routes to avoid conflicts)
+Route::get('/', function () {
+    return view('home');
+})->name('home');
+
+Route::get('/privacy', function () {
+    return view('privacy');
+})->name('privacy');
+
+Route::get('/terms', function () {
+    return view('terms');
+})->name('terms');
 
 Route::get('wa', function () {
 

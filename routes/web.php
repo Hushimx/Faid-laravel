@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\CountryController;
@@ -52,30 +53,33 @@ Route::get('change-locale/{locale}', function ($locale) {
 })->name('change.locale');
 
 
-// Login Routes
-Route::prefix('login')->middleware('guest')->controller(LoginController::class)->group(function () {
-    Route::get('/', 'index')->name('login');
-    Route::post('/', 'login')->name('login');
-});
+// Admin Panel Routes - All under /admin prefix
+Route::prefix('admin')->group(function () {
+    
+    // Login Routes
+    Route::middleware('guest')->controller(LoginController::class)->group(function () {
+        Route::get('/login', 'index')->name('login');
+        Route::post('/login', 'login')->name('login');
+    });
 
+    // Authenticated Admin Routes
+    Route::middleware(['auth'])->group(function () {
 
-Route::middleware(['auth'])->group(function () {
+        // Logout Route
+        Route::get('logout', [DashboardController::class, 'logout'])->name('logout');
 
-    // Logout Route
-    Route::get('logout', [DashboardController::class, 'logout'])->name('logout');
+        // Profile Routes
+        Route::get('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'edit'])->name('profile.edit')->defaults('breadcrumbs', [
+            ['name' => 'Edit Profile']
+        ]);
+        Route::patch('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('profile.update');
+        Route::put('profile/password', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePassword'])->name('profile.password.update');
+        Route::patch('profile/picture', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePicture'])->name('profile.picture.update');
 
-    // Profile Routes
-    Route::get('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'edit'])->name('profile.edit')->defaults('breadcrumbs', [
-        ['name' => 'Edit Profile']
-    ]);
-    Route::patch('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('profile.update');
-    Route::put('profile/password', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePassword'])->name('profile.password.update');
-    Route::patch('profile/picture', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePicture'])->name('profile.picture.update');
-
-    // Dashboard Route
-    Route::get('', [DashboardController::class, 'index'])->name('dashboard')->defaults('breadcrumbs', [
-        ['name' => __('dashboard.dashboard')]
-    ]);
+        // Dashboard Route
+        Route::get('', [DashboardController::class, 'index'])->name('dashboard')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.dashboard')]
+        ]);
 
     // Countries Routes
     Route::prefix('countries')->name('countries.')->controller(CountryController::class)->group(function () {
@@ -105,6 +109,17 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', 'store')->name('store');
         Route::put('/{category}', 'update')->name('update');
         Route::delete('/{category}', 'destroy')->name('destroy');
+    });
+
+    // Banners Routes
+    Route::prefix('banners')->name('banners.')->controller(BannerController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => 'Banners']
+        ]);
+        Route::post('/', 'store')->name('store');
+        Route::post('/update-order', 'updateOrder')->name('update-order');
+        Route::put('/{banner}', 'update')->name('update');
+        Route::delete('/{banner}', 'destroy')->name('destroy');
     });
 
     // Services Routes
@@ -238,6 +253,20 @@ Route::middleware(['auth'])->group(function () {
             ['name' => __('dashboard.Notifications'), 'url' => 'notifications.index'],
             ['name' => __('dashboard.Notification Details')]
         ]);
+    });
+
+    // Vendor Applications (Admin)
+    Route::prefix('vendor-applications')->name('vendor-applications.')->controller(\App\Http\Controllers\Admin\VendorApplicationController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => 'Vendor Applications']
+        ]);
+        Route::get('/{vendorApplication}', 'show')->name('show')->defaults('breadcrumbs', [
+            ['name' => 'Vendor Applications', 'url' => 'vendor-applications.index'],
+            ['name' => 'Application Details']
+        ]);
+        Route::post('/{vendorApplication}/approve', 'approve')->name('approve');
+        Route::post('/{vendorApplication}/reject', 'reject')->name('reject');
+    });
     });
 });
 

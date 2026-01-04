@@ -17,7 +17,9 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $this->authorize('dashboard.view');
+        // Allow all authenticated admin users to access dashboard
+        // If you want to restrict access, ensure users have 'dashboard.view' permission
+        // $this->authorize('dashboard.view');
         
         // Users Statistics
         $usersStats = [

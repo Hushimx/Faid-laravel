@@ -57,6 +57,12 @@ class RolePermissionSeeder extends Seeder
       'categories.edit',
       'categories.delete',
 
+      // Banners permissions
+      'banners.view',
+      'banners.create',
+      'banners.edit',
+      'banners.delete',
+
       // Services permissions
       'services.view',
       'services.create',

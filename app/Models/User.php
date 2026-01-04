@@ -154,4 +154,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class, 'admin_id');
     }
+
+    /**
+     * Vendor application submitted by user.
+     */
+    public function vendorApplication()
+    {
+        return $this->hasOne(VendorApplication::class);
+    }
 }

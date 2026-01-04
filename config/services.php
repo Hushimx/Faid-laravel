@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        'instance_id' => env('WHATSAPP_INSTANCE_ID'),
+        'access_token' => env('WHATSAPP_ACCESS_TOKEN'),
+        'api_url' => env('WHATSAPP_API_URL', 'https://whatsapp.myjarak.com/api/send'),
+    ],
+
 ];

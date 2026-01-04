@@ -43,6 +43,21 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        // Handle authentication exceptions - redirect to admin login
+        $exceptions->renderable(function (AuthenticationException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+            
+            // Redirect to admin login for admin routes
+            if ($request->is('admin*')) {
+                return redirect()->route('login');
+            }
+            
+            // Default redirect for other routes
+            return redirect()->route('login');
+        });
+
         // Handle authorization exceptions for web routes
         $exceptions->renderable(function (AuthorizationException $e, $request) {
             if (!$request->expectsJson()) {

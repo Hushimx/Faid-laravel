@@ -4,9 +4,9 @@
             <a aria-label="Hide Sidebar" class="app-sidebar__toggle" data-bs-toggle="sidebar" href="javascript:void(0)"></a>
             <!-- sidebar-toggle-->
             <a class="logo-horizontal " href="{{ route('dashboard') }}">
-                <img src="{{ asset('assets/images/brand/logo-white.png') }}" class="header-brand-img desktop-logo"
+                <img src="{{ asset('images/logo.png') }}" class="header-brand-img desktop-logo"
                     alt="logo">
-                <img src="{{ asset('assets/images/brand/logo-dark.png') }}" class="header-brand-img light-logo1"
+                <img src="{{ asset('images/logo.png') }}" class="header-brand-img light-logo1"
                     alt="logo">
             </a>
             <!-- LOGO -->
@@ -18,7 +18,10 @@
                                 <a class="nav-link icon text-center" data-bs-target="#country-selector"
                                     data-bs-toggle="modal">
                                     <i class="fe fe-globe"></i><span class="fs-16 ms-2 d-none d-xl-block">
-                                        {{ collect(locales())->where('code', app()->getLocale())->first()->name }}
+                                        @php
+                                            $currentLocale = collect(locales())->where('code', app()->getLocale())->first();
+                                        @endphp
+                                        {{ $currentLocale ? $currentLocale->name : strtoupper(app()->getLocale()) }}
                                     </span>
                                 </a>
                             </div>

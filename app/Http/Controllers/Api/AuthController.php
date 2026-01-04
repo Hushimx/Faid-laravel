@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Propaganistas\LaravelPhone\Rules\Phone;
 
 class AuthController extends Controller
@@ -106,7 +107,7 @@ class AuthController extends Controller
             'address' => ['nullable', 'string', 'max:255'],
             'profile_picture' => ['nullable', 'image'],
             'current_password' => ['required_with:new_password', 'nullable', 'string'],
-            'new_password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'new_password' => ['nullable', 'string', 'min:8', 'confirmed', 'regex:/^[a-zA-Z0-9]+$/'],
         ];
 
         $shouldHandleVendor = $user->type === 'vendor';
@@ -232,16 +233,16 @@ class AuthController extends Controller
     }
 
     /**
-     * Register a new user
+     * Register a new user (stores data temporarily until OTP verification)
      */
     public function register(Request $request)
     {
         $rules = [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['nullable', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['required', 'string', 'max:20', new Phone, 'unique:users,phone'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'phone' => ['required', 'string', 'max:20', new Phone],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^[a-zA-Z0-9]+$/'],
             'type' => ['nullable', 'string', Rule::in(['user', 'vendor'])],
             'fcm_token' => ['nullable', 'string'],
         ];
@@ -262,6 +263,25 @@ class AuthController extends Controller
 
         $validated = $request->validate($rules);
 
+        // Normalize phone number (remove leading +)
+        $phone = ltrim($validated['phone'], '+');
+        $validated['phone'] = $phone;
+
+        // Check if email or phone already exists in database
+        $emailExists = User::where('email', $validated['email'])->exists();
+        $phoneExists = User::where('phone', $phone)->exists();
+
+        if ($emailExists) {
+            return ApiResponse::error('Email already taken', [
+                'email' => ['The email has already been taken.']
+            ], 422);
+        }
+
+        if ($phoneExists) {
+            return ApiResponse::error('Phone number already taken', [
+                'phone' => ['The phone number has already been taken.']
+            ], 422);
+        }
 
         $vendorProfileData = $validated['vendor_profile'] ?? [];
 
@@ -291,95 +311,94 @@ class AuthController extends Controller
         $type = $validated['type'];
         $validated['status'] = $validated['status'] ?? 'active';
 
-        // Hash password before creating
+        // Hash password before storing
         $validated['password'] = Hash::make($validated['password']);
 
-        try {
-            $user = DB::transaction(function () use ($validated, $vendorProfileData, $type) {
-                $user = User::create($validated);
+        // Store registration data in cache temporarily (expires in 15 minutes)
+        $cacheKey = 'pending_registration_' . $validated['phone'];
+        $registrationData = [
+            'user_data' => $validated,
+            'vendor_profile' => $vendorProfileData,
+            'fcm_token' => $request->fcm_token,
+            'device_name' => $request->userAgent() ?: 'unknown',
+            'created_at' => now()->toIso8601String(),
+        ];
 
-                if ($type === 'vendor') {
-                    $user->vendorProfile()->updateOrCreate([], $vendorProfileData);
-                }
+        Cache::put($cacheKey, $registrationData, now()->addMinutes(15));
 
-                return $user;
-            });
-
-            $user->loadMissing(['vendorProfile.country', 'vendorProfile.city']);
-
-
-            // Create token
-            $deviceName = $request->userAgent() ?: 'unknown';
-            $token = $user->createToken($deviceName)->plainTextToken;
-
-            // Save FCM token if provided
-            if ($request->filled('fcm_token')) {
-                // Search globally since token has unique constraint
-                FcmToken::updateOrCreate(
-                    ['token' => $request->fcm_token],
-                    [
-                        'user_id' => $user->id,
-                        'device_type' => 'mobile',
-                        'device_name' => $deviceName,
-                        'is_active' => true,
-                        'last_used_at' => now(),
-                    ]
-                );
-            }
-
-            // Return created user with transformed data
-            return ApiResponse::success(
-                [
-                    'token' => $token,
-                    'user' => new UserResource($user)
-                ],
-                'Account created',
-                201
-            );
-        } catch (\Exception $e) {
-            report($e);
-            return ApiResponse::error('Failed to create account', [], 500);
-        }
+        // Return success immediately - OTP will be sent by the frontend via sendOtp endpoint
+        // This prevents the registration from hanging on slow WhatsApp API responses
+        return ApiResponse::success(
+            [
+                'phone' => $validated['phone'],
+                'message' => 'Registration data stored. Please verify OTP to complete registration.'
+            ],
+            'Registration initiated. Please verify OTP.',
+            200
+        );
     }
 
     public function sendOtp(Request $request)
     {
         $request->validate([
-            'phone' => ['required', 'string', 'exists:users,phone', 'max:255', new Phone],
+            'phone' => ['required', 'string', 'max:255', new Phone],
         ]);
 
+        $phone = ltrim($request->phone, '+');
+        $request->merge(['phone' => $phone]);
 
+        // Check if user exists
+        $user = User::where('phone', $phone)->first();
+        
+        // Check if there's a pending registration
+        $cacheKey = 'pending_registration_' . $phone;
+        $pendingRegistration = Cache::get($cacheKey);
 
-        $user = User::where('phone', $request->phone)->first();
-
-        if (!$user) {
-            return ApiResponse::error('User not found', [], 404);
+        // If neither user exists nor pending registration, return error
+        if (!$user && !$pendingRegistration) {
+            return ApiResponse::error('Phone number not found. Please register first.', [], 404);
         }
-
-        $request->merge(['phone' => ltrim($request->phone, '+')]);
 
         $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
-        $user->otp = $otp;
-        $user->otp_expires_at = now()->addMinutes(10);
-        $user->save();
 
-        // Send OTP via email
-        $data = [
-            'number' => $request->phone,
-            'type' => 'text',
-            'message' => 'رمز التحقق الخاص بك هو: ' . $otp,
-            'instance_id' => '6913EBDBC98DC',
-            'access_token' => '69124dec58076',
-        ];
-
-        $response = Http::post('https://whatsapp.myjarak.com/api/send', $data);
-        $json_response = $response->json();
-
-        if ($json_response['status'] != 'success') {
-            return ApiResponse::error('Failed to send OTP', [], 500);
+        if ($user) {
+            // Existing user - update OTP in database
+            $user->otp = $otp;
+            $user->otp_expires_at = now()->addMinutes(10);
+            $user->save();
+        } else {
+            // Pending registration - store OTP in cache
+            $pendingRegistration['otp'] = $otp;
+            $pendingRegistration['otp_expires_at'] = now()->addMinutes(10)->toIso8601String();
+            Cache::put($cacheKey, $pendingRegistration, now()->addMinutes(15));
         }
 
+        // Send OTP via WhatsApp with timeout to prevent hanging
+        $data = [
+            'number' => $phone,
+            'type' => 'text',
+            'message' => 'رمز التحقق الخاص بك هو: ' . $otp,
+            'instance_id' => config('services.whatsapp.instance_id'),
+            'access_token' => config('services.whatsapp.access_token'),
+        ];
 
+        try {
+            $response = Http::timeout(10)->post(config('services.whatsapp.api_url'), $data);
+            $json_response = $response->json();
+
+            if (isset($json_response['status']) && $json_response['status'] != 'success') {
+                return ApiResponse::error('Failed to send OTP', [], 500);
+            }
+        } catch (\Exception $e) {
+            // Log the error but still return success if OTP is stored
+            report($e);
+            // If OTP is stored in cache/DB, we can still return success
+            // User can request a new OTP if needed
+            if ($user || $pendingRegistration) {
+                return ApiResponse::success([], 'OTP generated. If you did not receive it, please request a new one.');
+            }
+            return ApiResponse::error('Failed to send OTP', [], 500);
+        }
 
         return ApiResponse::success([], 'OTP sent successfully');
     }
@@ -387,13 +406,91 @@ class AuthController extends Controller
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'phone' => ['required', 'string', 'exists:users,phone', 'max:255', new Phone],
+            'phone' => ['required', 'string', 'max:255', new Phone],
             'otp' => ['required', 'string', 'max:6'],
             'type' => 'required|string|in:verification,password_reset',
         ]);
 
-        $user = User::where('phone', $request->phone)->first();
+        $phone = ltrim($request->phone, '+');
+        $user = User::where('phone', $phone)->first();
+        
+        // Check for pending registration
+        $cacheKey = 'pending_registration_' . $phone;
+        $pendingRegistration = Cache::get($cacheKey);
 
+        // Handle pending registration (new user registration)
+        if (!$user && $pendingRegistration) {
+            // Verify OTP from cache
+            if (!isset($pendingRegistration['otp']) || $pendingRegistration['otp'] !== $request->otp) {
+                return ApiResponse::error('Invalid OTP', [], 400);
+            }
+
+            $otpExpiresAt = isset($pendingRegistration['otp_expires_at']) 
+                ? \Carbon\Carbon::parse($pendingRegistration['otp_expires_at']) 
+                : null;
+
+            if ($otpExpiresAt && $otpExpiresAt < now()) {
+                return ApiResponse::error('OTP expired', [], 400);
+            }
+
+            if ($request->type === 'verification') {
+                // Create the user account
+                try {
+                    $user = DB::transaction(function () use ($pendingRegistration) {
+                        $userData = $pendingRegistration['user_data'];
+                        $vendorProfileData = $pendingRegistration['vendor_profile'] ?? [];
+                        $type = $userData['type'] ?? 'user';
+
+                        $user = User::create($userData);
+
+                        if ($type === 'vendor' && !empty($vendorProfileData)) {
+                            $user->vendorProfile()->updateOrCreate([], $vendorProfileData);
+                        }
+
+                        return $user;
+                    });
+
+                    $user->loadMissing(['vendorProfile.country', 'vendorProfile.city']);
+
+                    // Create token
+                    $deviceName = $pendingRegistration['device_name'] ?? 'unknown';
+                    $token = $user->createToken($deviceName)->plainTextToken;
+
+                    // Save FCM token if provided
+                    if (!empty($pendingRegistration['fcm_token'])) {
+                        FcmToken::updateOrCreate(
+                            ['token' => $pendingRegistration['fcm_token']],
+                            [
+                                'user_id' => $user->id,
+                                'device_type' => 'mobile',
+                                'device_name' => $deviceName,
+                                'is_active' => true,
+                                'last_used_at' => now(),
+                            ]
+                        );
+                    }
+
+                    // Clear pending registration from cache
+                    Cache::forget($cacheKey);
+
+                    // Mark email as verified
+                    $user->email_verified_at = now();
+                    $user->save();
+
+                    return ApiResponse::success([
+                        'token' => $token,
+                        'user' => new UserResource($user)
+                    ], 'OTP verified successfully. Account created.');
+                } catch (\Exception $e) {
+                    report($e);
+                    return ApiResponse::error('Failed to create account', [], 500);
+                }
+            } else {
+                return ApiResponse::error('Invalid verification type for pending registration', [], 400);
+            }
+        }
+
+        // Handle existing user
         if (!$user) {
             return ApiResponse::error('User not found', [], 404);
         }
@@ -417,7 +514,6 @@ class AuthController extends Controller
             $user->otp_expires_at = now()->addMinutes(10);
         }
 
-
         $user->save();
 
         return ApiResponse::success([
@@ -429,7 +525,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'phone' => ['required', 'string', 'exists:users,phone', 'max:255', new Phone],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^[a-zA-Z0-9]+$/'],
         ]);
 
         $user = User::where('phone', $request->phone)->first();
@@ -448,7 +544,7 @@ class AuthController extends Controller
 
         $user->otp = null;
         $user->otp_expires_at = null;
-        $user->password = Hash::make($request->new_password);
+        $user->password = Hash::make($request->password);
         $user->save();
 
         return ApiResponse::success([], 'Password reset successfully');

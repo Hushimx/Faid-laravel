@@ -15,6 +15,11 @@ class LoginController extends Controller
 
     public function index()
     {
+        // Redirect authenticated users to dashboard
+        if (auth()->check()) {
+            return redirect()->route('dashboard');
+        }
+        
         return view('login');
     }
 
@@ -40,6 +45,7 @@ class LoginController extends Controller
             $this->auth->clear($key);
             $request->session()->regenerate();
 
+            // Redirect to intended URL or dashboard
             return redirect()->intended(route('dashboard'))
                 ->with('success', 'Logged in successfully 👋');
 

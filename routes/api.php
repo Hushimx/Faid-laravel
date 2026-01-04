@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\ProductController;
@@ -18,7 +19,7 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('register', 'register');
     Route::post('login', 'login');
 
-    // OTP routes
+    // OTP routes - limit to 1 request per minute
     Route::post('send-otp', 'sendOtp')->middleware('throttle:1,1');
     Route::post('verify-otp', 'verifyOtp');
     Route::post('reset-password', 'resetPassword');
@@ -33,6 +34,12 @@ Route::controller(AuthController::class)->group(function () {
 
 // Public offers
 Route::get('/offers', [OfferController::class, 'index']);
+
+// Banners Routes (Public - Read-only, Active banners only)
+Route::controller(BannerController::class)->group(function () {
+    Route::get('banners', 'index');
+    Route::get('banners/{banner}', 'show');
+});
 
 // Categories Routes (Public - Read-only, Active categories only)
 Route::controller(CategoryController::class)->group(function () {
@@ -113,4 +120,10 @@ Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(\App\Htt
     Route::get('notifications', 'index');
     Route::post('notifications/{id}/read', 'markAsRead');
     Route::post('notifications/read-all', 'markAllAsRead');
+});
+
+// Vendor Applications Routes
+Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(\App\Http\Controllers\Api\VendorApplicationController::class)->group(function () {
+    Route::post('vendor-applications', 'store');
+    Route::get('vendor-applications/my-application', 'show');
 });

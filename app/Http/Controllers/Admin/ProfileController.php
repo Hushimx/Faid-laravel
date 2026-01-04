@@ -33,7 +33,7 @@ class ProfileController extends Controller
       'address' => ['nullable', 'string', 'max:255'],
       'profile_picture' => ['nullable', 'image'],
       'current_password' => ['nullable', 'required_with:new_password', 'string'],
-      'new_password' => ['nullable', 'string', 'min:8', 'confirmed'],
+      'new_password' => ['nullable', 'string', 'min:8', 'confirmed', 'regex:/^[a-zA-Z0-9]+$/'],
     ]);
 
     // Handle password change
@@ -77,7 +77,7 @@ class ProfileController extends Controller
 
     $validated = $request->validate([
       'current_password' => ['required', 'string'],
-      'new_password' => ['required', 'string', 'min:8', 'confirmed'],
+      'new_password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^[a-zA-Z0-9]+$/'],
     ]);
 
     if (!Hash::check($validated['current_password'], $user->password)) {

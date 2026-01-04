@@ -3,13 +3,13 @@
     <div class="app-sidebar">
         <div class="side-header">
             <a class="header-brand1" href="{{ route('dashboard') }}">
-                <img src="{{ asset('assets/images/brand/logo-white.png') }}" class="header-brand-img desktop-logo"
+                <img src="{{ asset('images/logo.png') }}" class="header-brand-img desktop-logo" style="max-width: 100px;"
                     alt="logo">
-                <img src="{{ asset('assets/images/brand/icon-white.png') }}" class="header-brand-img toggle-logo"
+                <img src="{{ asset('images/logo.png') }}" class="header-brand-img toggle-logo"  style="max-width: 100px;"
                     alt="logo">
-                <img src="{{ asset('assets/images/brand/icon-dark.png') }}" class="header-brand-img light-logo"
+                <img src="{{ asset('images/logo.png') }}" class="header-brand-img light-logo"  style="max-width: 100px;"
                     alt="logo">
-                <img src="{{ asset('assets/images/brand/logo-dark.png') }}" class="header-brand-img light-logo1"
+                <img src="{{ asset('images/logo.png') }}" class="header-brand-img light-logo1 " style="max-width: 100px;"
                     alt="logo">
             </a>
             <!-- LOGO -->
@@ -67,6 +67,14 @@
                                 class="side-menu__label">@lang('dashboard.Categories')</span></a>
                     </li>
                 @endcan
+                @can('banners.view')
+                    <li class="slide">
+                        <a class="side-menu__item has-link {{ handleActiveSidebar(['banners.*']) }}"
+                            data-bs-toggle="slide" href="{{ route('banners.index') }}"><i
+                                class="side-menu__icon fe fe-image"></i><span
+                                class="side-menu__label">@lang('dashboard.Banners')</span></a>
+                    </li>
+                @endcan
                 @can('services.view')
                     <li class="slide">
                         <a class="side-menu__item has-link {{ handleActiveSidebar(['services.*']) }}"
@@ -97,6 +105,11 @@
                                 class="side-menu__label">@lang('dashboard.Tickets')</span></a>
                     </li>
                 @endcan
+                <li class="slide">
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['vendor-applications.*']) }}" data-bs-toggle="slide"
+                        href="{{ route('vendor-applications.index') }}"><i class="side-menu__icon fe fe-file-text"></i><span
+                            class="side-menu__label">Vendor Applications</span></a>
+                </li>
                 @can('offers.view')
                     <li class="slide">
                         <a class="side-menu__item has-link {{ handleActiveSidebar(['offers.*']) }}" data-bs-toggle="slide"

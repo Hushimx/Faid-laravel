@@ -13,7 +13,7 @@ class AuthService
     {
         return $request->validate([
             'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string', 'min:6'],
+            'password' => ['required', 'string', 'min:8', 'regex:/^[a-zA-Z0-9]+$/'],
             'remember' => ['sometimes', 'boolean'],
         ]);
     }

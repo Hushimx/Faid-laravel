@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 class Message extends Model
 {
     protected $fillable = [
-        'chat_id', 'sender_id', 'message_type', 'message', 'file_path', 'file_type'
+        'chat_id', 'sender_id', 'message_type', 'message', 'file_path', 'file_type', 'latitude', 'longitude'
     ];
 
     public function getFilePathAttribute($value) {

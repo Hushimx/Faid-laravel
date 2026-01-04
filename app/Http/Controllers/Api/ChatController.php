@@ -68,8 +68,10 @@ class ChatController extends Controller
     public function send(Request $request, Chat $chat)
     {
         $request->validate([
-            'message' => 'required_without:file|string',
-            'file' => 'required_without:message|file|max:10240', // max 10MB
+            'message' => 'required_without_all:file,latitude|string',
+            'file' => 'required_without_all:message,latitude|file|max:10240', // max 10MB
+            'latitude' => 'required_with:longitude|numeric',
+            'longitude' => 'required_with:latitude|numeric',
         ]);
 
         $data = [
@@ -85,8 +87,17 @@ class ChatController extends Controller
             $data['message_type'] = 'file';
             $data['file_path'] = $path;
             $data['file_type'] = $type;
-        }
-        if ($request->has('message')) {
+            // Include message if provided with file
+            if ($request->has('message')) {
+                $data['message'] = $request->message;
+            }
+        } elseif ($request->has('latitude') && $request->has('longitude')) {
+            // Location message - no text required, just like WhatsApp
+            $data['message_type'] = 'location';
+            $data['message'] = null; // No text message for location
+            $data['latitude'] = $request->latitude;
+            $data['longitude'] = $request->longitude;
+        } elseif ($request->has('message')) {
             $data['message_type'] = 'text';
             $data['message'] = $request->message;
         }

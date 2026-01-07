@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('messages', function (Blueprint $table) {
-            $table->decimal('latitude', 10, 8)->nullable()->after('file_type');
-            $table->decimal('longitude', 11, 8)->nullable()->after('latitude');
+        Schema::table('services', function (Blueprint $table) {
+            $table->json('address')->nullable()->change();
         });
     }
 
@@ -22,9 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('messages', function (Blueprint $table) {
-            $table->dropColumn(['latitude', 'longitude']);
+        Schema::table('services', function (Blueprint $table) {
+            $table->text('address')->nullable()->change();
         });
     }
 };
-

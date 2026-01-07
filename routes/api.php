@@ -57,6 +57,7 @@ Route::controller(ServiceController::class)->group(function () {
     // Public routes (visible services only)
     Route::get('services', 'index');
     Route::get('services/{service}', 'show');
+    Route::get('services/{service}/related', 'related');
 
     // Reviews for services (public list, auth to post)
     Route::get('services/{service}/reviews', [\App\Http\Controllers\Api\ServiceReviewController::class, 'index']);
@@ -65,7 +66,7 @@ Route::controller(ServiceController::class)->group(function () {
     // Vendor routes only (authenticated vendors)
     Route::middleware(['auth:sanctum', 'ensure-verified-user'])->group(function () {
         Route::post('services', 'store');
-        Route::put('services/{service}', 'update');
+        Route::post('services/{service}/update', 'update'); // Use POST for updates to handle form-data
         Route::delete('services/{service}', 'destroy');
     });
 });
@@ -85,19 +86,22 @@ Route::controller(ServiceController::class)->group(function () {
 // });
 
 // Tickets Routes (for users and vendors)
+// Rate limiting: 10 ticket creations per hour, 60 requests per minute for other operations
 Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(TicketController::class)->group(function () {
-    Route::get('tickets', 'index');
-    Route::post('tickets', 'store');
-    Route::get('tickets/{ticket}', 'show');
-    Route::put('tickets/{ticket}', 'update');
-    Route::delete('tickets/{ticket}', 'destroy');
+    Route::get('tickets', 'index')->middleware('throttle:60,1');
+    Route::post('tickets', 'store')->middleware('throttle:10,60'); // 10 per hour
+    Route::get('tickets/{ticket}', 'show')->middleware('throttle:60,1');
+    Route::put('tickets/{ticket}', 'update')->middleware('throttle:30,1'); // 30 updates per minute
+    Route::delete('tickets/{ticket}', 'destroy')->middleware('throttle:10,1'); // 10 deletions per minute
 });
 
 // Ticket Messages Routes
+// Rate limiting: Removed throttle for sending messages to allow normal conversation flow
+// Increased throttle for reading to allow frequent polling (300 per minute = 5 per second)
 Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(TicketMessageController::class)->group(function () {
-    Route::get('tickets/{ticket}/messages', 'index');
-    Route::post('tickets/{ticket}/messages', 'store');
-    Route::post('tickets/{ticket}/messages/mark-read', 'markAsRead');
+    Route::get('tickets/{ticket}/messages', 'index')->middleware('throttle:300,1'); // 300 per minute for frequent polling
+    Route::post('tickets/{ticket}/messages', 'store'); // No throttle - allow normal messaging
+    Route::post('tickets/{ticket}/messages/mark-read', 'markAsRead')->middleware('throttle:60,1');
 });
 
 // Chat Routes

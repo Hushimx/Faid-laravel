@@ -18,6 +18,7 @@ class Service extends Model
 
     public const PRICE_TYPE_FIXED = 'fixed';
     public const PRICE_TYPE_NEGOTIABLE = 'negotiable';
+    public const PRICE_TYPE_UNSPECIFIED = 'unspecified';
 
     /**
      * The attributes that can be mass-assigned.
@@ -47,6 +48,7 @@ class Service extends Model
     public array $translatable = [
         'title',
         'description',
+        'address',
     ];
 
     /**
@@ -176,6 +178,7 @@ class Service extends Model
         return [
             self::PRICE_TYPE_FIXED,
             self::PRICE_TYPE_NEGOTIABLE,
+            self::PRICE_TYPE_UNSPECIFIED,
         ];
     }
     /**

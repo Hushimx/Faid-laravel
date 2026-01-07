@@ -117,7 +117,13 @@ if (!function_exists('uploadImage')) {
 
             return $filePath;
         } catch (\Exception $e) {
-            Log::error('Image upload failed: ' . $e->getMessage());
+            Log::error('Image upload failed: ' . $e->getMessage(), [
+                'exception' => $e,
+                'file' => $file->getClientOriginalName() ?? 'unknown',
+                'mime_type' => $file->getMimeType() ?? 'unknown',
+                'size' => $file->getSize() ?? 0,
+                'is_valid' => $file->isValid(),
+            ]);
             return null;
         }
     }
@@ -139,7 +145,21 @@ if (!function_exists('locales')) {
 if (!function_exists('normalize_translations')) {
     function normalize_translations(array $input, string $fullback = 'en'): array
     {
-        $locales = array_map(fn($locale) => $locale->code, locales());
+        $locales = [];
+        try {
+            $localeData = locales();
+            if (!empty($localeData) && is_array($localeData)) {
+                $locales = array_map(fn($locale) => is_object($locale) ? $locale->code : ($locale['code'] ?? null), $localeData);
+                $locales = array_filter($locales);
+            }
+        } catch (\Exception $e) {
+            // Fallback if locales() fails
+        }
+        
+        // If no locales from database, use default
+        if (empty($locales)) {
+            $locales = ['en', 'ar'];
+        }
 
         $filtered = array_intersect_key($input, array_flip($locales));
 

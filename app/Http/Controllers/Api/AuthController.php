@@ -11,6 +11,7 @@ use App\Support\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Http;
@@ -155,14 +156,34 @@ class AuthController extends Controller
 
         // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
-            $path = uploadImage(
-                $request->file('profile_picture'),
-                'profile-pictures',
-                ['width' => 300, 'height' => 300],
-                $user->profile_picture
-            );
+            try {
+                $path = uploadImage(
+                    $request->file('profile_picture'),
+                    'profile-pictures',
+                    ['width' => 300, 'height' => 300],
+                    $user->profile_picture
+                );
 
-            if (!$path) {
+                if (!$path) {
+                    Log::error('Profile picture upload returned null', [
+                        'file_name' => $request->file('profile_picture')->getClientOriginalName(),
+                        'mime_type' => $request->file('profile_picture')->getMimeType(),
+                        'size' => $request->file('profile_picture')->getSize(),
+                    ]);
+                    return ApiResponse::error(
+                        'Failed to upload profile picture',
+                        [
+                            'profile_picture' => ['An error occurred while uploading the image.'],
+                        ],
+                        500
+                    );
+                }
+
+                $validated['profile_picture'] = $path;
+            } catch (\Exception $e) {
+                Log::error('Profile picture upload exception: ' . $e->getMessage(), [
+                    'exception' => $e,
+                ]);
                 return ApiResponse::error(
                     'Failed to upload profile picture',
                     [
@@ -171,8 +192,6 @@ class AuthController extends Controller
                     500
                 );
             }
-
-            $validated['profile_picture'] = $path;
         }
 
         if ($shouldHandleVendor && $request->hasFile('vendor_profile.banner')) {

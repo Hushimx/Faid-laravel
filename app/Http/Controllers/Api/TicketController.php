@@ -16,44 +16,67 @@ class TicketController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-        
-        // Only allow users and vendors to access their tickets
-        if (!in_array($user->type, ['user', 'vendor'])) {
-            return ApiResponse::error('Unauthorized', [], 403);
-        }
-        
-        $query = Ticket::with(['user', 'assignedAdmin', 'latestMessage'])
-            ->where('user_id', $user->id);
-        
-        // Filters
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        
-        if ($request->filled('priority')) {
-            $query->where('priority', $request->priority);
-        }
-        
-        if ($request->filled('search')) {
-            $search = '%' . $request->search . '%';
-            $query->where(function ($q) use ($search) {
-                $q->where('subject', 'like', $search)
-                  ->orWhere('description', 'like', $search);
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return ApiResponse::error('Unauthenticated', [], 401);
+            }
+            
+            // Only allow users and vendors to access their tickets
+            if (!in_array($user->type, ['user', 'vendor'])) {
+                return ApiResponse::error('Unauthorized', [], 403);
+            }
+            
+            $query = Ticket::with(['assignedAdmin', 'latestMessage'])
+                ->withCount('messages')
+                ->where('user_id', $user->id);
+            
+            // Filters
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+            
+            if ($request->filled('priority')) {
+                $query->where('priority', $request->priority);
+            }
+            
+            if ($request->filled('search')) {
+                $search = '%' . $request->search . '%';
+                $query->where(function ($q) use ($search) {
+                    $q->where('subject', 'like', $search)
+                      ->orWhere('description', 'like', $search);
+                });
+            }
+            
+            $perPage = $request->integer('per_page', 15);
+            $tickets = $query->latest()->paginate($perPage);
+            
+            // Transform tickets to resources
+            $tickets->getCollection()->transform(function ($ticket) {
+                try {
+                    return new TicketResource($ticket);
+                } catch (\Exception $e) {
+                    \Log::error('Error transforming ticket ' . $ticket->id . ': ' . $e->getMessage());
+                    throw $e;
+                }
             });
+            
+            return ApiResponse::paginated(
+                $tickets,
+                'Tickets retrieved successfully'
+            );
+        } catch (\Exception $e) {
+            \Log::error('Ticket index error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $request->user()?->id,
+            ]);
+            return ApiResponse::error(
+                'An error occurred while fetching tickets',
+                ['error' => $e->getMessage()],
+                500
+            );
         }
-        
-        $perPage = $request->integer('per_page', 15);
-        $tickets = $query->latest()->paginate($perPage);
-        
-        $tickets->getCollection()->transform(function ($ticket) {
-            return new TicketResource($ticket);
-        });
-        
-        return ApiResponse::paginated(
-            $tickets,
-            'Tickets retrieved successfully'
-        );
     }
 
     /**
@@ -82,7 +105,8 @@ class TicketController extends Controller
             'status' => 'open',
         ]);
         
-        $ticket->load(['user', 'assignedAdmin']);
+        $ticket->load(['assignedAdmin', 'latestMessage']);
+        $ticket->loadCount('messages');
         
         return ApiResponse::success(
             new TicketResource($ticket),
@@ -109,7 +133,8 @@ class TicketController extends Controller
         }
         
         // Load relationships
-        $ticket->load(['user', 'assignedAdmin', 'messages.user']);
+        $ticket->load(['assignedAdmin', 'messages.user', 'latestMessage']);
+        $ticket->loadCount('messages');
         
         // Mark unread messages as read
         $ticket->messages()
@@ -150,7 +175,8 @@ class TicketController extends Controller
             $ticket->open();
         }
         
-        $ticket->load(['user', 'assignedAdmin']);
+        $ticket->load(['assignedAdmin', 'latestMessage']);
+        $ticket->loadCount('messages');
         
         return ApiResponse::success(
             new TicketResource($ticket),

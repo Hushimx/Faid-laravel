@@ -8,7 +8,9 @@ use App\Models\Service;
 use App\Models\Media;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use App\Models\City;
@@ -32,7 +34,8 @@ class ServiceController extends Controller
             'status' => $request->string('status')->toString(),
             'price_min' => $request->has('price_min') ? (float) $request->input('price_min') : null,
             'price_max' => $request->has('price_max') ? (float) $request->input('price_max') : null,
-            'per_page' => $request->integer('per_page', 15),
+            'sort' => $request->string('sort')->toString() ?: 'latest',
+            'per_page' => $request->integer('per_page', 20),
             'include_media' => $request->boolean('include_media', false),
             'include_faqs' => $request->boolean('include_faqs', false),
         ];
@@ -89,11 +92,11 @@ class ServiceController extends Controller
             $query->where('status', $filters['status']);
         }
 
-        if ($filters['price_min'] !== null) {
+        if ($filters['price_min'] !== null && $filters['price_min'] > 0) {
             $query->where('price', '>=', $filters['price_min']);
         }
 
-        if ($filters['price_max'] !== null) {
+        if ($filters['price_max'] !== null && $filters['price_max'] > 0) {
             $query->where('price', '<=', $filters['price_max']);
         }
 
@@ -102,7 +105,27 @@ class ServiceController extends Controller
             $query->with(['images', 'videos']);
         }
 
-        $services = $query->latest()->paginate($filters['per_page']);
+        // Apply sorting
+        switch ($filters['sort']) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'price_asc':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'rating':
+                $query->orderByRaw('(SELECT AVG(rating) FROM reviews WHERE reviews.service_id = services.id) DESC NULLS LAST');
+                break;
+            case 'latest':
+            default:
+                $query->latest();
+                break;
+        }
+
+        $services = $query->paginate($filters['per_page']);
 
         $services->setCollection(
             $services->getCollection()->map(fn($service) => new ServiceResource($service))
@@ -145,6 +168,80 @@ class ServiceController extends Controller
     }
 
     /**
+     * Get related services (same category and city, ordered by distance).
+     */
+    public function related(Request $request, $serviceId)
+    {
+        $service = Service::find($serviceId);
+        
+        if (!$service) {
+            return ApiResponse::error('Service not found', [], 404);
+        }
+
+        // Check if service is visible to public
+        $user = $request->user();
+        $isVendor = $user && $user->type === 'vendor';
+        
+        if (!$isVendor && !$service->isVisible()) {
+            return ApiResponse::error('Service not found', [], 404);
+        }
+
+        // Use cache to avoid recalculating distances
+        $cacheKey = "related_services_{$serviceId}";
+        
+        $relatedServices = Cache::remember($cacheKey, 3600, function () use ($service) {
+            $query = Service::query()
+                ->where('id', '!=', $service->id)
+                ->where('category_id', $service->category_id)
+                ->where('status', Service::STATUS_ACTIVE)
+                ->whereNull('admin_status')
+                ->with(['category', 'vendor', 'images'])
+                ->withCount('images')
+                ->withCount('reviews')
+                ->withAvg('reviews', 'rating');
+
+            // Filter by city if service has city_id
+            if ($service->city_id) {
+                $query->where('city_id', $service->city_id);
+            }
+
+            // If service has coordinates, calculate distance and order by proximity
+            if ($service->lat && $service->lng) {
+                $lat = $service->lat;
+                $lng = $service->lng;
+                
+                // Haversine formula for distance calculation (in kilometers)
+                $query->selectRaw("
+                    services.*,
+                    (6371 * acos(
+                        cos(radians(?)) * 
+                        cos(radians(services.lat)) * 
+                        cos(radians(services.lng) - radians(?)) + 
+                        sin(radians(?)) * 
+                        sin(radians(services.lat))
+                    )) AS distance
+                ", [$lat, $lng, $lat])
+                ->whereNotNull('lat')
+                ->whereNotNull('lng')
+                ->orderBy('distance', 'asc');
+            } else {
+                // If no coordinates, just order by latest
+                $query->latest();
+            }
+
+            return $query->limit(10)->get();
+        });
+
+        // Transform to ServiceResource
+        $relatedServices = $relatedServices->map(fn($service) => new ServiceResource($service));
+
+        return ApiResponse::success(
+            $relatedServices,
+            'Related services retrieved successfully'
+        );
+    }
+
+    /**
      * Store a newly created service (vendor only).
      */
     public function store(Request $request)
@@ -166,11 +263,11 @@ class ServiceController extends Controller
             $service->description = $this->normalizeOptionalTranslations($request->input('description'));
             $service->price_type = $validated['price_type'];
             $service->price = $validated['price'] ?? null;
-            $service->address = $validated['address'] ?? null;
-            $service->city_id = $this->handleCityLogic($validated['city'] ?? null);
-            $service->status = Service::STATUS_PENDING;
+            $service->address = $this->normalizeOptionalTranslations($request->input('address'));
+            $service->city_id = $this->handleCityLogic($request->input('city'));
+            $service->status = Service::STATUS_ACTIVE;
             $service->attributes = $validated['attributes'] ?? null;
-            $service->published_at = $validated['status'] === Service::STATUS_ACTIVE ? now() : null;
+            $service->published_at = ($validated['status'] ?? Service::STATUS_ACTIVE) === Service::STATUS_ACTIVE ? now() : null;
             $service->lat = $validated['lat'] ?? null;
             $service->lng = $validated['lng'] ?? null;
             $service->save();
@@ -198,58 +295,232 @@ class ServiceController extends Controller
 
     /**
      * Update the specified service.
+     * Accepts both PUT (for JSON) and POST (for form-data) requests
      */
-    public function update(Request $request, Service $service)
+    public function update(Request $request, $serviceId)
     {
         $user = $request->user();
+        
+        $service = Service::find($serviceId);
+        
+        if (!$service) {
+            return ApiResponse::error('Service not found', [], 404);
+        }
 
-        // Only vendor owner can update
         if (!$user || $user->type !== 'vendor' || $service->vendor_id !== $user->id) {
             return ApiResponse::error('Unauthorized', [], 403);
         }
 
-        // Vendors cannot update if admin suspended
         if ($service->admin_status === Service::ADMIN_STATUS_SUSPENDED) {
             return ApiResponse::error('Service is suspended and cannot be updated', [], 403);
         }
 
+        // For PUT with multipart/form-data, manually parse the request
+        // Laravel doesn't parse multipart/form-data with PUT automatically
+        $allData = [];
+        
+        if ($request->method() === 'PUT' && str_contains($request->header('Content-Type', ''), 'multipart/form-data')) {
+            // Parse multipart form data manually
+            $content = $request->getContent();
+            $boundary = '';
+            
+            // Extract boundary from Content-Type header
+            if (preg_match('/boundary=(.*)$/is', $request->header('Content-Type', ''), $matches)) {
+                $boundary = '--' . trim($matches[1]);
+            }
+            
+            if ($boundary && $content) {
+                $parts = explode($boundary, $content);
+                foreach ($parts as $part) {
+                    if (preg_match('/name="([^"]+)"\s*\r?\n\r?\n(.*?)(?=\r?\n--|$)/s', $part, $matches)) {
+                        $fieldName = $matches[1];
+                        $fieldValue = trim($matches[2]);
+                        
+                        // Handle array notation like title[ar]
+                        if (preg_match('/^(.+)\[(.+)\]$/', $fieldName, $nameMatches)) {
+                            $allData[$nameMatches[1]][$nameMatches[2]] = $fieldValue;
+                        } else {
+                            $allData[$fieldName] = $fieldValue;
+                        }
+                    }
+                }
+                
+                // Merge parsed data into request
+                $request->merge($allData);
+            }
+        } else {
+            $allData = $request->all();
+        }
+        
+        // Validate
         $validated = $this->validateServiceData($request, $service);
+        
+        // Merge validated data
+        $allData = array_merge($allData, $validated);
+        
+        Log::info('Update Request', [
+            'method' => $request->method(),
+            'content_type' => $request->header('Content-Type'),
+            'all_data' => $allData,
+            'validated' => $validated,
+            'price_type' => $allData['price_type'] ?? 'NOT_SET',
+            'price' => $allData['price'] ?? 'NOT_SET',
+        ]);
 
         DB::beginTransaction();
         try {
-            $service->category_id = $validated['category_id'];
-            $service->title = normalize_translations($request->input('title'));
-            $service->description = $this->normalizeOptionalTranslations($request->input('description'));
-            $service->price_type = $validated['price_type'];
-            $service->price = $validated['price'] ?? null;
-            $service->status = Service::STATUS_PENDING;
-            $service->attributes = $validated['attributes'] ?? null;
-            $service->lat = $validated['lat'] ?? $service->lat;
-            $service->lng = $validated['lng'] ?? $service->lng;
-            $service->address = $validated['address'] ?? $service->address;
-            if (isset($validated['city'])) {
-                $service->city_id = $this->handleCityLogic($validated['city']);
+            // Update category_id if sent
+            if (isset($allData['category_id']) || $request->input('category_id') !== null) {
+                $service->category_id = $validated['category_id'] ?? ($allData['category_id'] ?? $request->input('category_id'));
             }
 
-            // Update published_at based on status
-            if ($service->status === Service::STATUS_ACTIVE && !$service->published_at) {
-                $service->published_at = now();
-            } elseif ($service->status !== Service::STATUS_ACTIVE) {
-                $service->published_at = null;
+            // Update title if sent
+            $titleInput = $allData['title'] ?? $request->input('title');
+            if (isset($allData['title']) || $titleInput !== null || isset($allData['title.ar']) || isset($allData['title.en'])) {
+                if (is_array($titleInput) && !empty($titleInput)) {
+                    $service->title = normalize_translations($titleInput);
+                } else {
+                    $service->title = normalize_translations([
+                        'ar' => $allData['title.ar'] ?? $request->input('title.ar', ''),
+                        'en' => $allData['title.en'] ?? $request->input('title.en', ''),
+                    ]);
+                }
             }
 
-            $service->save();
+            // Update description if sent
+            $descInput = $allData['description'] ?? $request->input('description');
+            if (isset($allData['description']) || $descInput !== null || isset($allData['description.ar']) || isset($allData['description.en'])) {
+                if (is_array($descInput) && !empty($descInput)) {
+                    $service->description = $this->normalizeOptionalTranslations($descInput);
+                } else {
+                    $service->description = $this->normalizeOptionalTranslations([
+                        'ar' => $allData['description.ar'] ?? $request->input('description.ar', ''),
+                        'en' => $allData['description.en'] ?? $request->input('description.en', ''),
+                    ]);
+                }
+            }
 
-            // Handle media uploads if provided
+            // Update price_type if sent - prioritize validated data
+            $priceTypeValue = $validated['price_type'] ?? ($allData['price_type'] ?? $request->input('price_type'));
+            if ($priceTypeValue !== null && $priceTypeValue !== '') {
+                $service->price_type = $priceTypeValue;
+                Log::info('Updating price_type', ['old' => $service->getOriginal('price_type'), 'new' => $priceTypeValue]);
+            }
+
+            // Update price if sent
+            $priceValue = $validated['price'] ?? ($allData['price'] ?? $request->input('price'));
+            if ($priceValue !== null) {
+                if ($priceValue === '' || $priceValue === null) {
+                    $service->price = null;
+                } else {
+                    $service->price = is_numeric($priceValue) ? (float)$priceValue : null;
+                }
+                Log::info('Updating price', ['old' => $service->getOriginal('price'), 'new' => $service->price]);
+            } elseif ($priceTypeValue !== null && $priceTypeValue === Service::PRICE_TYPE_UNSPECIFIED) {
+                $service->price = null;
+                Log::info('Setting price to null for unspecified type');
+            }
+
+            // Update address if sent
+            $addressInput = $allData['address'] ?? $request->input('address');
+            if (isset($allData['address']) || $addressInput !== null || isset($allData['address.ar']) || isset($allData['address.en'])) {
+                if (is_array($addressInput) && !empty($addressInput)) {
+                    $service->address = $this->normalizeOptionalTranslations($addressInput);
+                } else {
+                    $service->address = $this->normalizeOptionalTranslations([
+                        'ar' => $allData['address.ar'] ?? $request->input('address.ar', ''),
+                        'en' => $allData['address.en'] ?? $request->input('address.en', ''),
+                    ]);
+                }
+            }
+
+            // Update city if sent
+            $cityInput = $allData['city'] ?? $request->input('city');
+            if (isset($allData['city']) || $cityInput !== null || isset($allData['city.ar']) || isset($allData['city.en'])) {
+                if (is_array($cityInput) && !empty($cityInput)) {
+                    $service->city_id = $this->handleCityLogic($cityInput);
+                } else {
+                    $service->city_id = $this->handleCityLogic([
+                        'ar' => $allData['city.ar'] ?? $request->input('city.ar', ''),
+                        'en' => $allData['city.en'] ?? $request->input('city.en', ''),
+                    ]);
+                }
+            }
+
+            // Update lat/lng if sent
+            if (isset($allData['lat']) || $request->input('lat') !== null) {
+                $service->lat = $validated['lat'] ?? ($allData['lat'] ?? $request->input('lat'));
+            }
+            if (isset($allData['lng']) || $request->input('lng') !== null) {
+                $service->lng = $validated['lng'] ?? ($allData['lng'] ?? $request->input('lng'));
+            }
+
+            // Update status if sent
+            if (isset($allData['status']) || $request->input('status') !== null) {
+                $service->status = $validated['status'] ?? ($allData['status'] ?? $request->input('status'));
+                if ($service->status === Service::STATUS_ACTIVE && !$service->published_at) {
+                    $service->published_at = now();
+                } elseif ($service->status !== Service::STATUS_ACTIVE) {
+                    $service->published_at = null;
+                }
+            }
+
+            // Update attributes if sent
+            if (isset($allData['attributes']) || $request->input('attributes') !== null) {
+                $service->attributes = $validated['attributes'] ?? ($allData['attributes'] ?? null);
+            }
+
+            // Log before save
+            Log::info('Before Save', [
+                'is_dirty' => $service->isDirty(),
+                'dirty_attributes' => $service->getDirty(),
+                'category_id' => $service->category_id,
+                'price_type' => $service->price_type,
+                'price' => $service->price,
+                'title' => $service->title,
+            ]);
+            
+            // Force save even if nothing changed (to trigger events)
+            $saved = $service->save();
+            
+            Log::info('After Save', [
+                'saved' => $saved,
+                'category_id' => $service->category_id,
+                'price_type' => $service->price_type,
+                'price' => $service->price,
+                'title' => $service->title,
+            ]);
+
+            // Handle media deletions
+            if ($request->has('keep_media_ids')) {
+                $keepMediaIds = $request->input('keep_media_ids', []);
+                if (!is_array($keepMediaIds)) {
+                    $keepMediaIds = [$keepMediaIds];
+                }
+                $service->media()
+                    ->whereNotIn('id', $keepMediaIds)
+                    ->get()
+                    ->each(function ($media) {
+                        if ($media->path && Storage::exists($media->path)) {
+                            Storage::delete($media->path);
+                        }
+                        $media->delete();
+                    });
+            }
+
+            // Handle media uploads
             if ($request->has('media')) {
                 $this->handleMediaUpload($service, $request);
             }
 
             // Handle FAQs
-            $this->handleFaqsUpdate($service, $request);
+            if ($request->has('faqs')) {
+                $this->handleFaqsUpdate($service, $request);
+            }
 
             DB::commit();
 
+            $service->refresh();
             $service->load(['category', 'vendor', 'images', 'videos', 'faqs']);
 
             return ApiResponse::success(
@@ -258,59 +529,35 @@ class ServiceController extends Controller
             );
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to update service: ' . $e->getMessage(), ['exception' => $e]);
             return ApiResponse::error('Failed to update service: ' . $e->getMessage(), [], 500);
         }
     }
-
-    /**
-     * Remove the specified service.
-     */
-    public function destroy(Request $request, Service $service)
-    {
-        $user = $request->user();
-
-        // Only vendor owner can delete
-        if (!$user || $user->type !== 'vendor' || $service->vendor_id !== $user->id) {
-            return ApiResponse::error('Unauthorized', [], 403);
-        }
-
-        DB::beginTransaction();
-        try {
-            // Delete associated media files
-            foreach ($service->media as $media) {
-                if ($media->path && Storage::exists($media->path)) {
-                    Storage::delete($media->path);
-                }
-            }
-
-            $service->delete();
-            DB::commit();
-
-            return ApiResponse::success(null, 'Service deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return ApiResponse::error('Failed to delete service', [], 500);
-        }
-    }
-
 
     /**
      * Validate service data.
      */
     protected function validateServiceData(Request $request, ?Service $service = null): array
     {
+        $isUpdate = $service !== null;
+        
         $rules = [
-            'category_id' => ['required', 'exists:categories,id'],
-            'title' => ['required', 'array'],
-            'title.en' => ['required', 'string', 'max:255'],
+            'category_id' => $isUpdate ? ['sometimes', 'nullable', 'exists:categories,id'] : ['required', 'exists:categories,id'],
+            'title' => $isUpdate ? ['sometimes', 'nullable', 'array'] : ['required', 'array'],
+            'title.ar' => ['nullable', 'string', 'max:255'],
+            'title.en' => ['nullable', 'string', 'max:255'],
             'title.*' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'array'],
             'description.*' => ['nullable', 'string', 'max:5000'],
-            'price_type' => ['required', Rule::in(Service::priceTypes())],
-            'price' => ['nullable', 'required_if:price_type,fixed', 'numeric', 'min:0', 'max:999999.99'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'city' => ['nullable', 'string', 'max:100'],
-            'status' => ['required', Rule::in(Service::vendorStatuses())],
+            'price_type' => $isUpdate ? ['sometimes', 'nullable', Rule::in(Service::priceTypes())] : ['required', Rule::in(Service::priceTypes())],
+            'price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'address' => ['nullable', 'array'],
+            'address.ar' => ['nullable', 'string', 'max:1000'],
+            'address.en' => ['nullable', 'string', 'max:1000'],
+            'city' => ['nullable', 'array'],
+            'city.ar' => ['nullable', 'string', 'max:100'],
+            'city.en' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in(Service::vendorStatuses())],
             'attributes' => ['nullable', 'array'],
             'media' => ['nullable', 'array'],
             'media.*.file' => ['required_with:media', 'file', 'mimes:jpeg,jpg,png,gif,mp4,mov,avi', 'max:10240'],
@@ -321,12 +568,14 @@ class ServiceController extends Controller
             'lng' => ['nullable', 'numeric', 'between:-180,180'],
             'faqs' => ['nullable', 'array'],
             'faqs.*.id' => ['nullable', 'exists:service_faqs,id'],
-            'faqs.*.question' => ['required_with:faqs.*', 'array'],
+            'faqs.*.question' => ['nullable', 'array'],
             'faqs.*.question.*' => ['nullable', 'string', 'max:500'],
-            'faqs.*.answer' => ['required_with:faqs.*', 'array'],
+            'faqs.*.answer' => ['nullable', 'array'],
             'faqs.*.answer.*' => ['nullable', 'string', 'max:2000'],
             'faqs.*.order' => ['nullable', 'integer', 'min:0'],
             'faqs.*.delete' => ['nullable', 'boolean'],
+            'keep_media_ids' => ['nullable', 'array'],
+            'keep_media_ids.*' => ['integer', 'exists:media,id'],
         ];
 
         return $request->validate($rules);
@@ -444,11 +693,64 @@ class ServiceController extends Controller
     }
 
     /**
+     * Remove the specified service.
+     */
+    public function destroy(Request $request, $serviceId)
+    {
+        $user = $request->user();
+        
+        $service = Service::find($serviceId);
+        
+        if (!$service) {
+            return ApiResponse::error('Service not found', [], 404);
+        }
+
+        if (!$user || $user->type !== 'vendor' || $service->vendor_id !== $user->id) {
+            return ApiResponse::error('Unauthorized', [], 403);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Delete associated media files
+            $service->media()->each(function ($media) {
+                if ($media->path && Storage::exists($media->path)) {
+                    Storage::delete($media->path);
+                }
+                $media->delete();
+            });
+
+            // Delete associated FAQs
+            $service->faqs()->delete();
+
+            // Delete the service
+            $service->delete();
+
+            DB::commit();
+
+            return ApiResponse::success(
+                null,
+                'Service deleted successfully'
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to delete service: ' . $e->getMessage(), ['exception' => $e]);
+            return ApiResponse::error('Failed to delete service: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    /**
      * Handle city and country logic.
      */
-    protected function handleCityLogic(?string $cityName): ?int
+    protected function handleCityLogic(?array $cityData): ?int
     {
-        if (empty($cityName)) {
+        if (empty($cityData) || !is_array($cityData)) {
+            return null;
+        }
+
+        $cityNameAr = $cityData['ar'] ?? null;
+        $cityNameEn = $cityData['en'] ?? $cityNameAr;
+
+        if (empty($cityNameAr)) {
             return null;
         }
 
@@ -461,19 +763,32 @@ class ServiceController extends Controller
             ]);
         }
 
+        // Normalize city name translations
+        $cityName = normalize_translations([
+            'ar' => $cityNameAr,
+            'en' => $cityNameEn,
+        ]);
+
         // Check/Create City
         // Search in both English and Arabic translations
         $city = City::where('country_id', $country->id)
-            ->where(function ($query) use ($cityName) {
-                $query->where('name->en', $cityName)
-                    ->orWhere('name->ar', $cityName);
+            ->where(function ($query) use ($cityNameAr, $cityNameEn) {
+                $query->where('name->ar', $cityNameAr)
+                    ->orWhere('name->en', $cityNameEn);
             })->first();
 
         if (!$city) {
             $city = City::create([
                 'country_id' => $country->id,
-                'name' => ['en' => $cityName, 'ar' => $cityName],
+                'name' => $cityName,
             ]);
+        } else {
+            // Update city name if it doesn't have both translations
+            $currentName = $city->name;
+            if (empty($currentName['en']) || empty($currentName['ar'])) {
+                $city->name = $cityName;
+                $city->save();
+            }
         }
 
         return $city->id;

@@ -28,29 +28,35 @@ class TicketResource extends JsonResource
             //         'type' => $this->user->type,
             //     ];
             // }),
-            'assigned_admin' => $this->whenLoaded('assignedAdmin', function () {
-                return $this->assignedAdmin ? [
-                    'id' => $this->assignedAdmin->id,
-                    'name' => $this->assignedAdmin->first_name . ' ' . $this->assignedAdmin->last_name,
-                    'email' => $this->assignedAdmin->email,
-                ] : null;
-            }),
-            'messages_count' => $this->whenCounted('messages'),
+            'assigned_admin' => $this->when(
+                $this->relationLoaded('assignedAdmin') && $this->assignedAdmin,
+                function () {
+                    return [
+                        'id' => $this->assignedAdmin->id,
+                        'name' => $this->assignedAdmin->name ?? 'Admin',
+                        'email' => $this->assignedAdmin->email,
+                    ];
+                }
+            ),
+            'messages_count' => (int) ($this->messages_count ?? 0),
             'messages' => $this->whenLoaded('messages', function () {
-                return TicketMessageResource::collection($this->messages);
+                return $this->messages ? TicketMessageResource::collection($this->messages) : [];
             }),
-            'latest_message' => $this->whenLoaded('latestMessage', function () {
-                return $this->latestMessage ? [
-                    'id' => $this->latestMessage->id,
-                    'message' => $this->latestMessage->message,
-                    'created_at' => $this->latestMessage->created_at->format('Y-m-d H:i:s'),
-                    'created_at_human' => $this->latestMessage->created_at->diffForHumans(),
-                ] : null;
-            }),
-            'closed_at' => $this->closed_at?->format('Y-m-d H:i:s'),
-            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
-            'created_at_human' => $this->created_at->diffForHumans(),
-            'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+            'latest_message' => $this->when(
+                $this->relationLoaded('latestMessage') && $this->latestMessage,
+                function () {
+                    return [
+                        'id' => $this->latestMessage->id,
+                        'message' => $this->latestMessage->message,
+                        'created_at' => $this->latestMessage->created_at->format('Y-m-d H:i:s'),
+                        'created_at_human' => $this->latestMessage->created_at->diffForHumans(),
+                    ];
+                }
+            ),
+            'closed_at' => $this->closed_at ? $this->closed_at->format('Y-m-d H:i:s') : null,
+            'created_at' => $this->created_at ? $this->created_at->format('Y-m-d H:i:s') : null,
+            'created_at_human' => $this->created_at ? $this->created_at->diffForHumans() : null,
+            'updated_at' => $this->updated_at ? $this->updated_at->format('Y-m-d H:i:s') : null,
         ];
     }
 }

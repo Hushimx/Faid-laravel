@@ -1,0 +1,672 @@
+{
+	"info": {
+		"_postman_id": "service-api-collection",
+		"name": "Service API Collection",
+		"description": "Complete API collection for Service endpoints - Create, Read, Update, Delete services",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Public Endpoints",
+			"item": [
+				{
+					"name": "Get All Services",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/services?per_page=15&include_media=true&include_faqs=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"services"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15",
+									"description": "Number of items per page"
+								},
+								{
+									"key": "include_media",
+									"value": "true",
+									"description": "Include media (images/videos)"
+								},
+								{
+									"key": "include_faqs",
+									"value": "true",
+									"description": "Include FAQs"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search term (optional)",
+									"disabled": true
+								},
+								{
+									"key": "category_id",
+									"value": "",
+									"description": "Filter by category ID (optional)",
+									"disabled": true
+								},
+								{
+									"key": "city_id",
+									"value": "",
+									"description": "Filter by city ID (optional)",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "",
+									"description": "Filter by status: active, pending, inactive (optional)",
+									"disabled": true
+								},
+								{
+									"key": "price_min",
+									"value": "",
+									"description": "Minimum price filter (optional)",
+									"disabled": true
+								},
+								{
+									"key": "price_max",
+									"value": "",
+									"description": "Maximum price filter (optional)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get list of all services (public endpoint)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Service",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/services/{{service_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"services",
+								"{{service_id}}"
+							]
+						},
+						"description": "Get a single service by ID (public endpoint)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Vendor Endpoints (Authenticated)",
+			"item": [
+				{
+					"name": "Create Service",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "category_id",
+									"value": "1",
+									"type": "text",
+									"description": "Category ID (required)"
+								},
+								{
+									"key": "title[ar]",
+									"value": "خدمة تجريبية",
+									"type": "text",
+									"description": "Title in Arabic (required)"
+								},
+								{
+									"key": "title[en]",
+									"value": "Test Service",
+									"type": "text",
+									"description": "Title in English (optional)"
+								},
+								{
+									"key": "description[ar]",
+									"value": "وصف الخدمة بالعربية",
+									"type": "text",
+									"description": "Description in Arabic (optional)"
+								},
+								{
+									"key": "description[en]",
+									"value": "Service description in English",
+									"type": "text",
+									"description": "Description in English (optional)"
+								},
+								{
+									"key": "price_type",
+									"value": "fixed",
+									"type": "text",
+									"description": "Price type: fixed, negotiable, unspecified (required)"
+								},
+								{
+									"key": "price",
+									"value": "100.50",
+									"type": "text",
+									"description": "Price (required if price_type is fixed)"
+								},
+								{
+									"key": "address[ar]",
+									"value": "الرياض، حي النرجس، شارع الملك فهد",
+									"type": "text",
+									"description": "Address in Arabic (optional)"
+								},
+								{
+									"key": "address[en]",
+									"value": "Riyadh, Al-Narjis District, King Fahd Street",
+									"type": "text",
+									"description": "Address in English (optional)"
+								},
+								{
+									"key": "city[ar]",
+									"value": "الرياض",
+									"type": "text",
+									"description": "City name in Arabic (optional)"
+								},
+								{
+									"key": "city[en]",
+									"value": "Riyadh",
+									"type": "text",
+									"description": "City name in English (optional)"
+								},
+								{
+									"key": "lat",
+									"value": "24.7136",
+									"type": "text",
+									"description": "Latitude (optional)"
+								},
+								{
+									"key": "lng",
+									"value": "46.6753",
+									"type": "text",
+									"description": "Longitude (optional)"
+								},
+								{
+									"key": "status",
+									"value": "active",
+									"type": "text",
+									"description": "Status: active, pending, inactive (optional, defaults to active)"
+								},
+								{
+									"key": "media[0][file]",
+									"type": "file",
+									"src": [],
+									"description": "Image or video file (optional)"
+								},
+								{
+									"key": "media[0][type]",
+									"value": "image",
+									"type": "text",
+									"description": "Media type: image or video (required if media file is provided)"
+								},
+								{
+									"key": "media[0][is_primary]",
+									"value": "1",
+									"type": "text",
+									"description": "Set as primary image (1 or 0, optional)"
+								},
+								{
+									"key": "faqs[0][question][ar]",
+									"value": "سؤال بالعربية؟",
+									"type": "text",
+									"description": "FAQ question in Arabic (optional)"
+								},
+								{
+									"key": "faqs[0][question][en]",
+									"value": "Question in English?",
+									"type": "text",
+									"description": "FAQ question in English (optional)"
+								},
+								{
+									"key": "faqs[0][answer][ar]",
+									"value": "إجابة بالعربية",
+									"type": "text",
+									"description": "FAQ answer in Arabic (optional)"
+								},
+								{
+									"key": "faqs[0][answer][en]",
+									"value": "Answer in English",
+									"type": "text",
+									"description": "FAQ answer in English (optional)"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/services",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"services"
+							]
+						},
+						"description": "Create a new service (vendor only, requires authentication)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Service",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "category_id",
+									"value": "1",
+									"type": "text",
+									"description": "Category ID (optional for update)"
+								},
+								{
+									"key": "title[ar]",
+									"value": "خدمة محدثة",
+									"type": "text",
+									"description": "Title in Arabic (optional for update)"
+								},
+								{
+									"key": "title[en]",
+									"value": "Updated Service",
+									"type": "text",
+									"description": "Title in English (optional for update)"
+								},
+								{
+									"key": "description[ar]",
+									"value": "وصف محدث",
+									"type": "text",
+									"description": "Description in Arabic (optional)"
+								},
+								{
+									"key": "description[en]",
+									"value": "Updated description",
+									"type": "text",
+									"description": "Description in English (optional)"
+								},
+								{
+									"key": "price_type",
+									"value": "negotiable",
+									"type": "text",
+									"description": "Price type: fixed, negotiable, unspecified (optional)"
+								},
+								{
+									"key": "price",
+									"value": "200.00",
+									"type": "text",
+									"description": "Price (optional, only if price_type is fixed)"
+								},
+								{
+									"key": "address[ar]",
+									"value": "عنوان محدث بالعربية",
+									"type": "text",
+									"description": "Address in Arabic (optional)"
+								},
+								{
+									"key": "address[en]",
+									"value": "Updated address in English",
+									"type": "text",
+									"description": "Address in English (optional)"
+								},
+								{
+									"key": "city[ar]",
+									"value": "جدة",
+									"type": "text",
+									"description": "City name in Arabic (optional)"
+								},
+								{
+									"key": "city[en]",
+									"value": "Jeddah",
+									"type": "text",
+									"description": "City name in English (optional)"
+								},
+								{
+									"key": "lat",
+									"value": "21.4858",
+									"type": "text",
+									"description": "Latitude (optional)"
+								},
+								{
+									"key": "lng",
+									"value": "39.1925",
+									"type": "text",
+									"description": "Longitude (optional)"
+								},
+								{
+									"key": "keep_media_ids[]",
+									"value": "1",
+									"type": "text",
+									"description": "Media IDs to keep (array - send one per line for multiple IDs)"
+								},
+								{
+									"key": "keep_media_ids[]",
+									"value": "2",
+									"type": "text",
+									"description": "Additional media ID to keep"
+								},
+								{
+									"key": "media[0][file]",
+									"type": "file",
+									"src": [],
+									"description": "New image or video file to add (optional)"
+								},
+								{
+									"key": "media[0][type]",
+									"value": "image",
+									"type": "text",
+									"description": "Media type: image or video (required if media file is provided)"
+								},
+								{
+									"key": "faqs[0][id]",
+									"value": "1",
+									"type": "text",
+									"description": "Existing FAQ ID to update (optional)"
+								},
+								{
+									"key": "faqs[0][question][ar]",
+									"value": "سؤال محدث؟",
+									"type": "text",
+									"description": "FAQ question in Arabic (optional)"
+								},
+								{
+									"key": "faqs[0][question][en]",
+									"value": "Updated question?",
+									"type": "text",
+									"description": "FAQ question in English (optional)"
+								},
+								{
+									"key": "faqs[0][answer][ar]",
+									"value": "إجابة محدثة",
+									"type": "text",
+									"description": "FAQ answer in Arabic (optional)"
+								},
+								{
+									"key": "faqs[0][answer][en]",
+									"value": "Updated answer",
+									"type": "text",
+									"description": "FAQ answer in English (optional)"
+								},
+								{
+									"key": "faqs[1][delete]",
+									"value": "1",
+									"type": "text",
+									"description": "Set to 1 to delete FAQ with ID (optional)"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/services/{{service_id}}/update",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"services",
+								"{{service_id}}",
+								"update"
+							]
+						},
+						"description": "Update an existing service (vendor only, requires authentication). Use POST method for form-data. Only send fields you want to update. Media not in keep_media_ids[] will be deleted."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Service",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/services/{{service_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"services",
+								"{{service_id}}"
+							]
+						},
+						"description": "Delete a service (vendor only, requires authentication)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Examples - Price Types",
+			"item": [
+				{
+					"name": "Create Service - Fixed Price",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "category_id",
+									"value": "1"
+								},
+								{
+									"key": "title[ar]",
+									"value": "خدمة بسعر ثابت"
+								},
+								{
+									"key": "title[en]",
+									"value": "Fixed Price Service"
+								},
+								{
+									"key": "price_type",
+									"value": "fixed"
+								},
+								{
+									"key": "price",
+									"value": "500.00"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/services",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"services"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Service - Negotiable Price",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "category_id",
+									"value": "1"
+								},
+								{
+									"key": "title[ar]",
+									"value": "خدمة بسعر قابل للتفاوض"
+								},
+								{
+									"key": "title[en]",
+									"value": "Negotiable Price Service"
+								},
+								{
+									"key": "price_type",
+									"value": "negotiable"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/services",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"services"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Service - Unspecified Price",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "category_id",
+									"value": "1"
+								},
+								{
+									"key": "title[ar]",
+									"value": "خدمة بسعر غير محدد"
+								},
+								{
+									"key": "title[en]",
+									"value": "Unspecified Price Service"
+								},
+								{
+									"key": "price_type",
+									"value": "unspecified"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/services",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"services"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string",
+			"description": "Base URL of your Laravel API. Change this to your actual API URL (e.g., https://api.yourdomain.com or http://192.168.1.100:8000 for mobile testing)"
+		},
+		{
+			"key": "auth_token",
+			"value": "your_bearer_token_here",
+			"type": "string",
+			"description": "Laravel Sanctum Bearer token. Get this from the login/register endpoint response. Format: Bearer {token}"
+		},
+		{
+			"key": "service_id",
+			"value": "1",
+			"type": "string",
+			"description": "Service ID to use for GET, UPDATE, DELETE operations. Update this after creating a service."
+		}
+	]
+}
+

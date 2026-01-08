@@ -252,6 +252,27 @@ class AuthController extends Controller
     }
 
     /**
+     * Delete the authenticated user's account.
+     */
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+
+        // Delete FCM token if provided
+        if ($request->filled('fcm_token')) {
+            $user->fcmTokens()->where('token', $request->fcm_token)->delete();
+        }
+
+        // Revoke all tokens
+        $user->tokens()->delete();
+
+        // Delete the user (this will cascade delete related records based on database constraints)
+        $user->delete();
+
+        return ApiResponse::success(null, 'Account deleted successfully');
+    }
+
+    /**
      * Register a new user (stores data temporarily until OTP verification)
      */
     public function register(Request $request)
@@ -531,23 +552,62 @@ class AuthController extends Controller
             $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
             $user->otp = $otp;
             $user->otp_expires_at = now()->addMinutes(10);
+            $user->save();
+
+            // Send the new OTP via WhatsApp for password reset
+            $data = [
+                'number' => $phone,
+                'type' => 'text',
+                'message' => 'رمز التحقق لإعادة تعيين كلمة المرور هو: ' . $otp,
+                'instance_id' => config('services.whatsapp.instance_id'),
+                'access_token' => config('services.whatsapp.access_token'),
+            ];
+
+            try {
+                $response = Http::timeout(10)->post(config('services.whatsapp.api_url'), $data);
+                $json_response = $response->json();
+
+                if (isset($json_response['status']) && $json_response['status'] != 'success') {
+                    // Log the error but still return success since OTP is saved
+                    Log::error('Failed to send password reset OTP via WhatsApp', [
+                        'phone' => $phone,
+                        'response' => $json_response,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // Log the error but still return success since OTP is saved
+                report($e);
+                Log::error('Exception while sending password reset OTP via WhatsApp', [
+                    'phone' => $phone,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return ApiResponse::success([
+                'otp' => $user->otp,
+            ], 'OTP verified successfully. Password reset OTP has been sent.');
         }
 
         $user->save();
 
         return ApiResponse::success([
-            'otp' => $request->type === 'password_reset' ? $user->otp : null,
+            'otp' => null,
         ], 'OTP verified successfully');
     }
 
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'phone' => ['required', 'string', 'exists:users,phone', 'max:255', new Phone],
+            'phone' => ['required', 'string', 'max:255', new Phone],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^[a-zA-Z0-9]+$/'],
+            'otp' => ['required', 'string', 'size:6'],
         ]);
 
-        $user = User::where('phone', $request->phone)->first();
+        // Normalize phone number (remove leading +) - same as other endpoints
+        $phone = ltrim($request->phone, '+');
+        
+        // Check if user exists with normalized phone
+        $user = User::where('phone', $phone)->first();
 
         if (!$user) {
             return ApiResponse::error('User not found', [], 404);

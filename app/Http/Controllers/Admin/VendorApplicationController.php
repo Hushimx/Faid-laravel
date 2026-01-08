@@ -31,7 +31,7 @@ class VendorApplicationController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = VendorApplication::with(['user', 'country', 'city', 'category', 'reviewer']);
+        $query = VendorApplication::with(['user', 'category', 'reviewer']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -42,13 +42,19 @@ class VendorApplicationController extends Controller
         if ($request->filled('search')) {
             $search = '%' . $request->search . '%';
             $query->where(function ($q) use ($search) {
-                $q->where('bio', 'like', $search)
+                $q->where('business_name', 'like', $search)
+                  ->orWhere('bio', 'like', $search)
+                  ->orWhere('custom_category', 'like', $search)
                   ->orWhereHas('user', function ($userQuery) use ($search) {
                       $userQuery->where(function($q) use ($search) {
                           $q->where('first_name', 'like', $search)
                             ->orWhere('last_name', 'like', $search)
                             ->orWhere('email', 'like', $search);
                       });
+                  })
+                  ->orWhere('city', 'like', $search)
+                  ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                      $categoryQuery->where('name', 'like', $search);
                   });
             });
         }
@@ -84,7 +90,7 @@ class VendorApplicationController extends Controller
      */
     public function show(VendorApplication $vendorApplication): View
     {
-        $vendorApplication->loadMissing(['user', 'country', 'city', 'category', 'reviewer']);
+        $vendorApplication->loadMissing(['user', 'category', 'reviewer']);
 
         return view('pages.vendor-applications.show', [
             'application' => $vendorApplication
@@ -112,14 +118,8 @@ class VendorApplicationController extends Controller
                 VendorProfile::updateOrCreate(
                     ['user_id' => $user->id],
                     [
-                        'country_id' => $vendorApplication->country_id,
-                        'city_id' => $vendorApplication->city_id,
-                        'lat' => $vendorApplication->lat,
-                        'lng' => $vendorApplication->lng,
-                        'banner' => $vendorApplication->banner,
                         'bio' => $vendorApplication->bio,
                         'category_id' => $vendorApplication->category_id,
-                        'meta' => $vendorApplication->meta,
                     ]
                 );
 

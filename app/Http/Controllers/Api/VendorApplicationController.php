@@ -38,55 +38,42 @@ class VendorApplicationController extends Controller
         }
 
         $validated = $request->validate([
-            'country_id' => ['nullable', 'exists:countries,id'],
-            'city_id' => ['nullable', 'exists:cities,id'],
-            'lat' => ['nullable', 'numeric', 'between:-90,90'],
-            'lng' => ['nullable', 'numeric', 'between:-180,180'],
-            'banner' => ['nullable', 'image'],
-            'bio' => ['nullable', 'string', 'max:1000'],
-            'category_id' => ['nullable', 'exists:categories,id'],
-            'custom_category' => ['nullable', 'string', 'max:255', 'required_without:category_id'],
-            'meta' => ['nullable', 'array'],
+            'business_name' => ['required', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:255'],
+            'bio' => ['required', 'string', 'max:1000'],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'custom_category' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $applicationData = $validated;
-
-        // Handle banner upload
-        if ($request->hasFile('banner')) {
-            $bannerPath = uploadImage(
-                $request->file('banner'),
-                'vendor-banners'
+        // Ensure either category_id or custom_category is provided
+        if (empty($validated['category_id']) && empty($validated['custom_category'])) {
+            return ApiResponse::error(
+                'Either category or custom category must be provided',
+                ['category_id' => ['Either category or custom category must be provided']],
+                422
             );
-
-            if (!$bannerPath) {
-                return ApiResponse::error('Failed to upload vendor banner', [], 500);
-            }
-
-            $applicationData['banner'] = $bannerPath;
         }
 
-        // Handle meta if it's a string
-        if (isset($applicationData['meta']) && is_string($applicationData['meta'])) {
-            $decodedMeta = json_decode($applicationData['meta'], true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $applicationData['meta'] = $decodedMeta;
-            }
-        }
-
+        $applicationData = $validated;
         $applicationData['user_id'] = $user->id;
         $applicationData['status'] = 'pending';
 
         try {
             $application = VendorApplication::create($applicationData);
-            $application->loadMissing(['country', 'city', 'category']);
+            $application->loadMissing(['category']);
 
             return ApiResponse::success(
                 $application,
                 'Vendor application submitted successfully'
             );
         } catch (\Exception $e) {
+            Log::error('Vendor application submission error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id' => $user->id,
+                'data' => $applicationData,
+            ]);
             return ApiResponse::error(
-                'Failed to submit application',
+                'Failed to submit application: ' . $e->getMessage(),
                 [],
                 500
             );
@@ -101,7 +88,7 @@ class VendorApplicationController extends Controller
         $user = Auth::user();
 
         $application = VendorApplication::where('user_id', $user->id)
-            ->with(['country', 'city', 'category', 'reviewer'])
+            ->with(['category', 'reviewer'])
             ->first();
 
         if (!$application) {

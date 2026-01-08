@@ -74,7 +74,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-transparent"><i class="fe fe-search"></i></span>
                         <input type="text" class="form-control" id="search" name="search"
-                            placeholder="Search by user name, email, or bio" value="{{ request('search') }}">
+                            placeholder="Search by business name, user name, email, city, or category" value="{{ request('search') }}">
                     </div>
                 </div>
 
@@ -121,8 +121,9 @@
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th>Bio</th>
-                            <th>Location</th>
+                            <th>Business Name</th>
+                            <th>City</th>
+                            <th>Category</th>
                             <th>Status</th>
                             <th>Submitted</th>
                             <th>Reviewed</th>
@@ -151,13 +152,16 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="text-truncate" style="max-width: 200px;" title="{{ $application->bio }}">
-                                        {{ $application->bio ?? 'N/A' }}
-                                    </div>
+                                    <div class="fw-semibold">{{ $application->business_name ?? 'N/A' }}</div>
                                 </td>
                                 <td>
-                                    @if($application->city)
-                                        {{ $application->city->name }}, {{ $application->country->name ?? '' }}
+                                    {{ $application->city ?? 'N/A' }}
+                                </td>
+                                <td>
+                                    @if($application->category)
+                                        {{ $application->category->name }}
+                                    @elseif($application->custom_category)
+                                        <span class="badge bg-info">{{ $application->custom_category }}</span>
                                     @else
                                         N/A
                                     @endif

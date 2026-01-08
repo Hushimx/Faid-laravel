@@ -8,6 +8,8 @@ class VendorApplication extends Model
 {
     protected $fillable = [
         'user_id',
+        'business_name',
+        'city',
         'country_id',
         'city_id',
         'lat',

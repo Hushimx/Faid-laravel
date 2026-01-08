@@ -29,6 +29,7 @@ Route::controller(AuthController::class)->group(function () {
         Route::get('me', 'me');
         Route::post('update', 'update');
         Route::post('logout', 'logout');
+        Route::delete('delete-account', 'deleteAccount');
     });
 });
 

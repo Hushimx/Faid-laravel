@@ -100,12 +100,12 @@
                         <div class="col-md-6">
                             <table class="table table-borderless">
                                 <tr>
-                                    <th style="width: 150px;">Country:</th>
-                                    <td>{{ $application->country->name ?? 'N/A' }}</td>
+                                    <th style="width: 150px;">Business Name:</th>
+                                    <td>{{ $application->business_name ?? 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <th>City:</th>
-                                    <td>{{ $application->city->name ?? 'N/A' }}</td>
+                                    <td>{{ $application->city ?? 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Category:</th>
@@ -119,38 +119,12 @@
                                         @endif
                                     </td>
                                 </tr>
-                                @if($application->lat && $application->lng)
-                                    <tr>
-                                        <th>Location:</th>
-                                        <td>
-                                            <a href="https://www.google.com/maps?q={{ $application->lat }},{{ $application->lng }}" 
-                                               target="_blank" class="btn btn-sm btn-outline-primary">
-                                                <i class="fe fe-map-pin me-1"></i>View on Map
-                                            </a>
-                                            <br>
-                                            <small class="text-muted">Lat: {{ $application->lat }}, Lng: {{ $application->lng }}</small>
-                                        </td>
-                                    </tr>
-                                @endif
                             </table>
-                        </div>
-                        <div class="col-md-6">
-                            @if($application->banner)
-                                <div class="mb-3">
-                                    <label class="form-label">Banner Image:</label>
-                                    <div>
-                                        <img src="{{ Storage::url($application->banner) }}" 
-                                             alt="Banner" 
-                                             class="img-fluid rounded" 
-                                             style="max-height: 200px;">
-                                    </div>
-                                </div>
-                            @endif
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Bio:</label>
+                        <label class="form-label">Description of Services:</label>
                         <div class="p-3 bg-light rounded">
                             {{ $application->bio ?? 'N/A' }}
                         </div>

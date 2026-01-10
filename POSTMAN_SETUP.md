@@ -136,3 +136,4 @@ The collection uses 3 variables that you need to configure:
 - [ ] Bilingual fields (Arabic/English) work correctly
 
 
+

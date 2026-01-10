@@ -106,9 +106,19 @@
                     </li>
                 @endcan
                 <li class="slide">
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['chats.*']) }}" data-bs-toggle="slide"
+                        href="{{ route('chats.index') }}"><i class="side-menu__icon fe fe-message-circle"></i><span
+                            class="side-menu__label">@lang('dashboard.Chats')</span></a>
+                </li>
+                <li class="slide">
+                    <a class="side-menu__item has-link {{ handleActiveSidebar(['chat-reports.*']) }}" data-bs-toggle="slide"
+                        href="{{ route('chat-reports.index') }}"><i class="side-menu__icon fe fe-flag"></i><span
+                            class="side-menu__label">@lang('dashboard.Chat Reports')</span></a>
+                </li>
+                <li class="slide">
                     <a class="side-menu__item has-link {{ handleActiveSidebar(['vendor-applications.*']) }}" data-bs-toggle="slide"
                         href="{{ route('vendor-applications.index') }}"><i class="side-menu__icon fe fe-file-text"></i><span
-                            class="side-menu__label">Vendor Applications</span></a>
+                            class="side-menu__label">@lang('dashboard.Vendor Applications')</span></a>
                 </li>
                 @can('offers.view')
                     <li class="slide">

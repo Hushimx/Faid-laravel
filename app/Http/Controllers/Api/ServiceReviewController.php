@@ -26,7 +26,10 @@ class ServiceReviewController extends Controller
    */
   public function index(Service $service)
   {
-    $reviews = $service->reviews()->with('user')->paginate(10);
+    $reviews = $service->reviews()
+      ->with('user')
+      ->orderBy('created_at', 'desc')
+      ->paginate(10);
     // Wrap each item with the resource so ApiResponse::paginated returns formatted items
     $reviews->setCollection($reviews->getCollection()->map(fn($r) => new ReviewResource($r)));
 

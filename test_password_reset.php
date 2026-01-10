@@ -112,3 +112,4 @@ echo "Phone: {$phoneFormatted}\n";
 echo "User ID: {$user->id}\n";
 echo "Current OTP in DB: {$user->fresh()->otp}\n";
 
+

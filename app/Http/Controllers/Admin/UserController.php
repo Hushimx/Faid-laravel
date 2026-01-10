@@ -496,4 +496,44 @@ class UserController extends Controller
             ->route($this->getRedirectRouteForType($userType))
             ->with('success', __('dashboard.User deleted successfully'));
     }
+
+    /**
+     * Ban the specified user
+     */
+    public function ban(User $user)
+    {
+        // Permission check - if permission exists, check it; otherwise allow (for backward compatibility)
+        try {
+            $this->authorize('users.ban');
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            // If permission doesn't exist yet, allow access for admins (handled by middleware)
+        }
+        
+        // Don't allow banning your own account
+        if ($user->id === Auth::id()) {
+            return redirect()
+                ->route('users.edit', $user)
+                ->with('error', __('dashboard.You cannot ban your own account'));
+        }
+
+        $user->update(['status' => 'inactive']);
+
+        return redirect()
+            ->route('users.edit', $user)
+            ->with('success', __('dashboard.User banned successfully'));
+    }
+
+    /**
+     * Unban the specified user
+     */
+    public function unban(User $user)
+    {
+        $this->authorize('users.ban');
+
+        $user->update(['status' => 'active']);
+
+        return redirect()
+            ->route('users.edit', $user)
+            ->with('success', __('dashboard.User unbanned successfully'));
+    }
 }

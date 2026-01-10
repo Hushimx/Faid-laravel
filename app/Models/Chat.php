@@ -37,5 +37,8 @@ class Chat extends Model
         return $this->belongsTo(Service::class, 'service_id');
     }
 
-
+    public function reports()
+    {
+        return $this->hasMany(ChatReport::class);
+    }
 }

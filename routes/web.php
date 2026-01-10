@@ -11,6 +11,8 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\TicketController;
 use App\Http\Controllers\Admin\TicketMessageController;
+use App\Http\Controllers\Admin\ChatController;
+use App\Http\Controllers\Admin\ChatReportController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Broadcast;
@@ -188,6 +190,8 @@ Route::prefix('admin')->group(function () {
         ]);
         Route::put('/{user}', 'update')->name('update');
         Route::delete('/{user}', 'destroy')->name('destroy');
+        Route::post('/{user}/ban', 'ban')->name('ban');
+        Route::post('/{user}/unban', 'unban')->name('unban');
     });
 
     // Roles Routes
@@ -229,6 +233,30 @@ Route::prefix('admin')->group(function () {
         Route::get('/ticket/{ticket}', 'index')->name('index');
         Route::post('/ticket/{ticket}', 'store')->name('store');
         Route::post('/ticket/{ticket}/mark-read', 'markAsRead')->name('mark-read');
+    });
+
+    // Chats Routes (Admin only)
+    Route::prefix('chats')->name('chats.')->controller(ChatController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.Chats')]
+        ]);
+        Route::get('/{chat}', 'show')->name('show')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.Chats'), 'url' => 'chats.index'],
+            ['name' => __('dashboard.Chat')]
+        ]);
+    });
+
+    // Chat Reports Routes (Admin only)
+    Route::prefix('chat-reports')->name('chat-reports.')->controller(ChatReportController::class)->group(function () {
+        Route::get('/', 'index')->name('index')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.Chat Reports')]
+        ]);
+        Route::get('/{report}', 'show')->name('show')->defaults('breadcrumbs', [
+            ['name' => __('dashboard.Chat Reports'), 'url' => 'chat-reports.index'],
+            ['name' => __('dashboard.Chat Report')]
+        ]);
+        Route::post('/{report}/ban', 'banUser')->name('ban');
+        Route::post('/{report}/dismiss', 'dismiss')->name('dismiss');
     });
 
     // Offers (Admin)

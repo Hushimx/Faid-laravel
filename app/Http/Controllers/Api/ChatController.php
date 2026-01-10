@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chat;
+use App\Models\ChatReport;
 use App\Models\Message;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
@@ -112,5 +113,27 @@ class ChatController extends Controller
         $messages = $chat->messages()->orderBy('created_at', 'asc')->get();
 
         return ApiResponse::success($messages, 'Messages retrieved successfully.');
+    }
+
+    public function reportChat(Request $request, Chat $chat)
+    {
+        $request->validate([
+            'reason' => 'required|string|min:10',
+        ]);
+
+        $user = Auth::user();
+        
+        // Determine the reported user (the other party in the chat)
+        $reportedUserId = $chat->user_id === $user->id ? $chat->vendor_id : $chat->user_id;
+
+        $report = ChatReport::create([
+            'chat_id' => $chat->id,
+            'reporter_id' => $user->id,
+            'reported_user_id' => $reportedUserId,
+            'reason' => $request->reason,
+            'status' => 'pending',
+        ]);
+
+        return ApiResponse::success($report, 'Chat reported successfully.');
     }
 }

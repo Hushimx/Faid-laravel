@@ -84,6 +84,16 @@ class RolePermissionSeeder extends Seeder
       'tickets.delete',
       'tickets.manage',
 
+      // Chats permissions
+      'chats.view',
+
+      // Chat Reports permissions
+      'chat-reports.view',
+      'chat-reports.ban',
+
+      // Users ban permission
+      'users.ban',
+
       // Offers permissions
       'offers.view',
       'offers.create',

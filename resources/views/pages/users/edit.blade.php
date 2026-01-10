@@ -382,6 +382,29 @@
                         </script>
                     @endif
 
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('chats.index', ['user_id' => $user->id]) }}" class="btn btn-info">
+                                <i class="fe fe-message-circle me-1"></i>@lang('dashboard.View All Chats')
+                            </a>
+                            @if($user->status === 'active')
+                                <form action="{{ route('users.ban', $user) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('@lang('dashboard.Are you sure you want to ban this user?')')">
+                                        <i class="fe fe-ban me-1"></i>@lang('dashboard.Ban User')
+                                    </button>
+                                </form>
+                            @else
+                                <form action="{{ route('users.unban', $user) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success" onclick="return confirm('@lang('dashboard.Are you sure you want to unban this user?')')">
+                                        <i class="fe fe-check me-1"></i>@lang('dashboard.Unban User')
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-end gap-2">
                         <a href="{{ route('users.all') }}" class="btn btn-secondary">@lang('dashboard.Cancel')</a>
                         <button type="submit" class="btn btn-primary">@lang('dashboard.Update User')</button>

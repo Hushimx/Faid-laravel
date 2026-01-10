@@ -111,6 +111,7 @@ Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(\App\Htt
     Route::post('chats/start', 'startChat');
     Route::get('chats/{chat}/messages', 'messages');
     Route::post('chats/{chat}/messages', 'send');
+    Route::post('chats/{chat}/report', 'reportChat');
 });
 
 // FCM Token Routes (Deprecated - Handled in Auth)

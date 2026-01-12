@@ -493,19 +493,39 @@ class ServiceController extends Controller
 
             // Handle media deletions
             if ($request->has('keep_media_ids')) {
-                $keepMediaIds = $request->input('keep_media_ids', []);
+                // Use validated data if available (already cleaned), otherwise clean the raw input
+                $keepMediaIds = $validated['keep_media_ids'] ?? $request->input('keep_media_ids', []);
+                
                 if (!is_array($keepMediaIds)) {
                     $keepMediaIds = [$keepMediaIds];
                 }
-                $service->media()
-                    ->whereNotIn('id', $keepMediaIds)
-                    ->get()
-                    ->each(function ($media) {
+                
+                // Filter out empty strings and convert to integers (if not already done in validation)
+                $keepMediaIds = array_filter(
+                    array_map('intval', array_filter($keepMediaIds, fn($id) => $id !== '' && $id !== null)),
+                    fn($id) => $id > 0
+                );
+                
+                if (!empty($keepMediaIds)) {
+                    // Keep only the specified media IDs, delete the rest
+                    $service->media()
+                        ->whereNotIn('id', $keepMediaIds)
+                        ->get()
+                        ->each(function ($media) {
+                            if ($media->path && Storage::exists($media->path)) {
+                                Storage::delete($media->path);
+                            }
+                            $media->delete();
+                        });
+                } else {
+                    // If keep_media_ids is empty or only contains empty values, delete all media
+                    $service->media()->get()->each(function ($media) {
                         if ($media->path && Storage::exists($media->path)) {
                             Storage::delete($media->path);
                         }
                         $media->delete();
                     });
+                }
             }
 
             // Handle media uploads
@@ -575,10 +595,22 @@ class ServiceController extends Controller
             'faqs.*.order' => ['nullable', 'integer', 'min:0'],
             'faqs.*.delete' => ['nullable', 'boolean'],
             'keep_media_ids' => ['nullable', 'array'],
-            'keep_media_ids.*' => ['integer', 'exists:media,id'],
+            'keep_media_ids.*' => ['nullable', 'integer', 'exists:media,id'],
         ];
 
-        return $request->validate($rules);
+        $validated = $request->validate($rules);
+        
+        // Clean up keep_media_ids: filter out empty strings and convert to integers
+        if (isset($validated['keep_media_ids']) && is_array($validated['keep_media_ids'])) {
+            $validated['keep_media_ids'] = array_filter(
+                array_map('intval', array_filter($validated['keep_media_ids'], fn($id) => $id !== '' && $id !== null)),
+                fn($id) => $id > 0
+            );
+            // Re-index array
+            $validated['keep_media_ids'] = array_values($validated['keep_media_ids']);
+        }
+        
+        return $validated;
     }
 
     /**

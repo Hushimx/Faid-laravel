@@ -55,30 +55,45 @@ class BannerController extends Controller
     {
         $this->authorize('banners.create');
         
-        $data = $this->validateData($request);
+        try {
+            $data = $this->validateData($request);
 
-        // Image is required for new banners
-        if (!$request->hasFile('image')) {
-            return redirect()->back()->withInput($request->except('image'))
-                ->with('error', __('dashboard.Banner image is required'));
+            // Image is required for new banners
+            if (!$request->hasFile('image')) {
+                return redirect()->back()->withInput($request->except('image'))
+                    ->with('error', __('dashboard.Banner image is required'));
+            }
+
+            $banner = new Banner();
+            $banner->link = $data['link'] ?? null;
+            $banner->status = $data['status'];
+            $banner->order = $data['order'] ?? null;
+
+            $path = uploadImage($request->file('image'), 'banners', ['width' => 1200, 'height' => 600]);
+
+            if (!$path) {
+                \Log::error('Banner image upload returned null', [
+                    'file_name' => $request->file('image')->getClientOriginalName(),
+                    'file_size' => $request->file('image')->getSize(),
+                    'mime_type' => $request->file('image')->getMimeType(),
+                ]);
+                return redirect()->back()->withInput($request->except('image'))
+                    ->with('error', __('dashboard.Banner image upload failed. Please check the logs for details.'));
+            }
+
+            $banner->image = $path;
+            $banner->save();
+
+            return redirect()->route('banners.index')->with('success', __('dashboard.Banner created successfully'));
+        } catch (\Exception $e) {
+            \Log::error('Banner creation failed: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()
+                ->withInput($request->except('image'))
+                ->with('error', __('dashboard.Failed to create banner: :error', ['error' => $e->getMessage()]));
         }
-
-        $banner = new Banner();
-        $banner->link = $data['link'] ?? null;
-        $banner->status = $data['status'];
-        $banner->order = $data['order'] ?? null;
-
-        $path = uploadImage($request->file('image'), 'banners', ['width' => 1200, 'height' => 600]);
-
-        if (!$path) {
-            return redirect()->back()->withInput($request->except('image'))
-                ->with('error', __('dashboard.Banner image upload failed'));
-        }
-
-        $banner->image = $path;
-        $banner->save();
-
-        return redirect()->route('banners.index')->with('success', __('dashboard.Banner created successfully'));
     }
 
     /**

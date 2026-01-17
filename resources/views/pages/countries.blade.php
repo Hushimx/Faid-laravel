@@ -4,11 +4,6 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title">@lang('dashboard.Countries List')</h4>
-            @can('countries.create')
-                <a class="modal-effect btn btn-primary" data-bs-effect="effect-scale" data-bs-toggle="modal" href="#createModal">
-                    @lang('dashboard.Create New Country')
-                </a>
-            @endcan
         </div>
         <div class="card-body">
             <div class="table-responsive">

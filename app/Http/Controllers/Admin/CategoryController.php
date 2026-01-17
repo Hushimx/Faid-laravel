@@ -62,28 +62,39 @@ class CategoryController extends Controller
   {
     $this->authorize('categories.create');
     
-    $data = $this->validateData($request);
+    try {
+      $data = $this->validateData($request);
 
-    $category = new Category();
-    $category->name = normalize_translations($request->input('name'));
-    $category->description = $this->normalizeOptionalTranslations($request->input('description'));
-    $category->status = $data['status'];
-    // parent_id removed - flat categories only
+      $category = new Category();
+      $category->name = normalize_translations($request->input('name'));
+      $category->description = $this->normalizeOptionalTranslations($request->input('description'));
+      $category->status = $data['status'];
+      // parent_id removed - flat categories only
 
-    if ($request->hasFile('image')) {
-      $path = uploadImage($request->file('image'), 'categories', ['width' => 600, 'height' => 600]);
+      if ($request->hasFile('image')) {
+        $path = uploadImage($request->file('image'), 'categories', ['width' => 600, 'height' => 600]);
 
-      if (!$path) {
-        return redirect()->back()->withInput($request->except('image'))
-          ->with('error', __('dashboard.Category image upload failed'));
+        if (!$path) {
+          \Log::error('Category image upload returned null', [
+            'file_name' => $request->file('image')->getClientOriginalName(),
+            'file_size' => $request->file('image')->getSize(),
+            'mime_type' => $request->file('image')->getMimeType(),
+          ]);
+          return redirect()->back()->withInput($request->except('image'))
+            ->with('error', __('dashboard.Category image upload failed. Please check the logs for details.'));
+        }
+
+        $category->image = $path;
       }
 
-      $category->image = $path;
+      $category->save();
+
+      return redirect()->route('categories.index')->with('success', __('dashboard.Category created successfully'));
+    } catch (\Exception $e) {
+      return redirect()->back()
+        ->withInput($request->except('image'))
+        ->with('error', __('dashboard.Failed to create category: :error', ['error' => $e->getMessage()]));
     }
-
-    $category->save();
-
-    return redirect()->route('categories.index')->with('success', __('dashboard.Category created successfully'));
   }
 
   /**

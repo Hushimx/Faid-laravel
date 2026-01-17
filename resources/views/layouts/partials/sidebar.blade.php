@@ -120,13 +120,6 @@
                         href="{{ route('vendor-applications.index') }}"><i class="side-menu__icon fe fe-file-text"></i><span
                             class="side-menu__label">@lang('dashboard.Vendor Applications')</span></a>
                 </li>
-                @can('offers.view')
-                    <li class="slide">
-                        <a class="side-menu__item has-link {{ handleActiveSidebar(['offers.*']) }}" data-bs-toggle="slide"
-                            href="{{ route('offers.index') }}"><i class="side-menu__icon fa fa-gift"></i><span
-                                class="side-menu__label">@lang('dashboard.Offers')</span></a>
-                    </li>
-                @endcan
                 {{-- @can('notifications.view') --}}
                     <li class="slide">
                         <a class="side-menu__item has-link {{ handleActiveSidebar(['notifications.*']) }}" data-bs-toggle="slide"

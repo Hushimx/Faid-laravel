@@ -22,38 +22,50 @@ class CityController extends Controller
     {
         $this->authorize('cities.create');
         
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|array',
             'name.en' => 'required|string|max:255',
             'name.*' => 'nullable|string|max:255',
             'country_id' => 'required|exists:countries,id',
         ]);
 
-        $city = new City();
-        $city->name = normalize_translations($request->input('name'));
-        $city->country_id = $request->country_id;
-        $city->save();
+        try {
+            $city = new City();
+            $city->name = normalize_translations($validated['name']);
+            $city->country_id = $validated['country_id'];
+            $city->save();
 
-        return redirect()->back()->with('success', __('dashboard.City added successfully'));
+            return redirect()->back()->with('success', __('dashboard.City added successfully'));
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', __('dashboard.Failed to add city: :error', ['error' => $e->getMessage()]));
+        }
     }
 
     public function update(Request $request, string $id)
     {
         $this->authorize('cities.edit');
         
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|array',
             'name.en' => 'required|string|max:255',
             'name.*' => 'nullable|string|max:255',
             'country_id' => 'required|exists:countries,id',
         ]);
 
-        $city = City::findOrFail($id);
-        $city->name = normalize_translations($request->input('name'));
-        $city->country_id = $request->country_id;
-        $city->save();
+        try {
+            $city = City::findOrFail($id);
+            $city->name = normalize_translations($validated['name']);
+            $city->country_id = $validated['country_id'];
+            $city->save();
 
-        return redirect()->back()->with('success', __('dashboard.City updated successfully'));
+            return redirect()->back()->with('success', __('dashboard.City updated successfully'));
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', __('dashboard.Failed to update city: :error', ['error' => $e->getMessage()]));
+        }
     }
 
     public function destroy(string $id)

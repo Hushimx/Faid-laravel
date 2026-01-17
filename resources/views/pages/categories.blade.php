@@ -139,15 +139,19 @@
                                 <td class="ps-4">
                                     {{ $loop->iteration + ($categories->currentPage() - 1) * $categories->perPage() }}</td>
                                 <td>
-                                    <div class="avatar avatar-md rounded-3 overflow-hidden">
-                                        @if ($category->image)
-                                            <img src="{{ Storage::url($category->image) }}" alt="{{ $category->name }}"
-                                                class="img-fluid">
-                                        @else
-                                            <span
-                                                class="avatar-initial bg-light text-muted fw-semibold">{{ mb_substr($category->name, 0, 1) }}</span>
-                                        @endif
-                                    </div>
+                                    @if ($category->image)
+                                        <div class="rounded overflow-hidden shadow-sm" style="width: 120px; height: 120px; cursor: pointer;"
+                                            data-bs-toggle="modal" data-bs-target="#imagePreviewModal"
+                                            data-image-url="{{ asset('storage/' . $category->image) }}"
+                                            data-image-alt="{{ $category->name }}">
+                                            <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}"
+                                                class="img-fluid w-100 h-100" style="object-fit: cover;">
+                                        </div>
+                                    @else
+                                        <div class="d-flex align-items-center justify-content-center bg-light rounded" style="width: 120px; height: 120px;">
+                                            <span class="text-muted fw-semibold fs-4">{{ mb_substr($category->name, 0, 1) }}</span>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td>
                                     <div class="fw-semibold">{{ $category->name }}</div>
@@ -256,12 +260,11 @@
                                                         @lang('dashboard.Image')
                                                     </label>
                                                     <div class="border rounded-3 p-3 text-center">
-                                                        <div
-                                                            class="d-inline-block rounded-3 overflow-hidden shadow-sm mb-3">
-                                                            <img src="{{ $category->image ? Storage::url($category->image) : asset('assets/images/media/36.png') }}"
+                                                        <div class="rounded overflow-hidden shadow-sm mb-3" style="max-width: 100%;">
+                                                            <img src="{{ $category->image ? asset('storage/' . $category->image) : asset('assets/images/media/36.png') }}"
                                                                 alt="@lang('dashboard.Image')"
-                                                                class="img-fluid object-fit-cover js-image-preview"
-                                                                style="height: 180px;"
+                                                                class="img-fluid js-image-preview"
+                                                                style="width: 100%; max-height: 300px; object-fit: contain;"
                                                                 id="edit-preview-{{ $category->id }}">
                                                         </div>
                                                         <input class="form-control js-image-input" type="file"
@@ -299,7 +302,13 @@
                                             @csrf
                                             @method('DELETE')
                                             <div class="modal-body">
-                                                <p class="mb-1">@lang('dashboard.Category delete confirmation')</p>
+                                                <p class="mb-3">@lang('dashboard.Category delete confirmation')</p>
+                                                @if ($category->image)
+                                                    <div class="text-center mb-3">
+                                                        <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}"
+                                                            class="img-fluid rounded shadow-sm" style="max-width: 100%; max-height: 300px; object-fit: contain;">
+                                                    </div>
+                                                @endif
                                                 <p class="text-danger fw-semibold mb-0">{{ $category->name }}</p>
                                             </div>
                                             <div class="modal-footer">
@@ -354,26 +363,69 @@
                 <form action="{{ route('categories.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-body">
+                        @php
+                            $availableLocales = locales();
+                            // Ensure at least 'en' is always present
+                            $defaultLocales = [
+                                (object)['code' => 'en', 'name' => 'English'],
+                                (object)['code' => 'ar', 'name' => 'Arabic']
+                            ];
+                            
+                            if (empty($availableLocales)) {
+                                $availableLocales = $defaultLocales;
+                            } else {
+                                // Ensure 'en' exists in the locales
+                                $hasEn = false;
+                                foreach ($availableLocales as $locale) {
+                                    $code = is_object($locale) ? $locale->code : ($locale['code'] ?? null);
+                                    if ($code === 'en') {
+                                        $hasEn = true;
+                                        break;
+                                    }
+                                }
+                                if (!$hasEn) {
+                                    array_unshift($availableLocales, (object)['code' => 'en', 'name' => 'English']);
+                                }
+                            }
+                        @endphp
                         <div class="row g-3">
                             <div class="col-md-6">
-                                @foreach (locales() as $locale)
+                                @foreach ($availableLocales as $locale)
+                                    @php
+                                        $localeCode = is_object($locale) ? $locale->code : ($locale['code'] ?? '');
+                                        $localeName = is_object($locale) ? $locale->name : ($locale['name'] ?? strtoupper($localeCode));
+                                    @endphp
                                     <div class="mb-3">
-                                        <label class="form-label" for="create-name-{{ $locale->code }}">
-                                            @lang('dashboard.Name') ({{ strtoupper($locale->name) }})
+                                        <label class="form-label" for="create-name-{{ $localeCode }}">
+                                            @lang('dashboard.Name') ({{ strtoupper($localeName) }})
                                         </label>
-                                        <input type="text" class="form-control" id="create-name-{{ $locale->code }}"
-                                            name="name[{{ $locale->code }}]" {{ $loop->first ? 'required' : '' }}>
+                                        <input type="text" class="form-control @error('name.' . $localeCode) is-invalid @enderror" id="create-name-{{ $localeCode }}"
+                                            name="name[{{ $localeCode }}]" value="{{ old('name.' . $localeCode) }}"
+                                            {{ $localeCode === 'en' ? 'required' : '' }}>
+                                        @error('name.' . $localeCode)
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
                                     </div>
                                 @endforeach
+                                @error('name')
+                                    <div class="alert alert-danger">{{ $message }}</div>
+                                @enderror
+                                @error('name.en')
+                                    <div class="alert alert-danger">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
-                                @foreach (locales() as $locale)
+                                @foreach ($availableLocales as $locale)
+                                    @php
+                                        $localeCode = is_object($locale) ? $locale->code : ($locale['code'] ?? '');
+                                        $localeName = is_object($locale) ? $locale->name : ($locale['name'] ?? strtoupper($localeCode));
+                                    @endphp
                                     <div class="mb-3">
-                                        <label class="form-label" for="create-description-{{ $locale->code }}">
-                                            @lang('dashboard.Description') ({{ strtoupper($locale->name) }})
+                                        <label class="form-label" for="create-description-{{ $localeCode }}">
+                                            @lang('dashboard.Description') ({{ strtoupper($localeName) }})
                                         </label>
-                                        <textarea class="form-control" rows="3" id="create-description-{{ $locale->code }}"
-                                            name="description[{{ $locale->code }}]"></textarea>
+                                        <textarea class="form-control" rows="3" id="create-description-{{ $localeCode }}"
+                                            name="description[{{ $localeCode }}]">{{ old('description.' . $localeCode) }}</textarea>
                                     </div>
                                 @endforeach
                             </div>
@@ -382,26 +434,33 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label" for="create-status">@lang('dashboard.Status')</label>
-                                <select class="form-select" id="create-status" name="status" required>
+                                <select class="form-select @error('status') is-invalid @enderror" id="create-status" name="status" required>
                                     @foreach (App\Models\Category::statuses() as $status)
-                                        <option value="{{ $status }}" @selected($status === App\Models\Category::STATUS_ACTIVE)>
+                                        <option value="{{ $status }}" @selected(old('status', App\Models\Category::STATUS_ACTIVE) === $status)>
                                             @lang('dashboard.' . ucfirst($status))
                                         </option>
                                     @endforeach
                                 </select>
+                                @error('status')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
 
                         <div class="mt-3">
                             <label class="form-label" for="create-image">@lang('dashboard.Image')</label>
                             <div class="border rounded-3 p-3 text-center">
-                                <div class="d-inline-block rounded-3 overflow-hidden shadow-sm mb-3">
+                                <div class="rounded overflow-hidden shadow-sm mb-3" style="max-width: 100%;">
                                     <img src="{{ asset('assets/images/media/36.png') }}" alt="@lang('dashboard.Image')"
-                                        class="img-fluid object-fit-cover js-image-preview" style="height: 180px;"
+                                        class="img-fluid js-image-preview"
+                                        style="width: 100%; max-height: 300px; object-fit: contain;"
                                         id="create-preview">
                                 </div>
-                                <input class="form-control js-image-input" type="file" id="create-image"
+                                <input class="form-control js-image-input @error('image') is-invalid @enderror" type="file" id="create-image"
                                     name="image" accept="image/*" data-preview="#create-preview">
+                                @error('image')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                                 <small class="text-muted d-block mt-2">@lang('dashboard.Image helper')</small>
                             </div>
                         </div>
@@ -449,6 +508,49 @@
                     reader.readAsDataURL(file);
                 });
             });
+        });
+
+        // Reopen modal if there are validation errors
+        @if ($errors->hasAny(['name', 'name.en', 'status', 'image']))
+            $(document).ready(function() {
+                setTimeout(function() {
+                    $('#createCategoryModal').modal('show');
+                }, 100);
+            });
+        @endif
+    </script>
+
+    <!-- Image Preview Modal -->
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imagePreviewModalLabel">@lang('dashboard.Image Preview')</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-0">
+                    <img id="previewImage" src="" alt="" class="img-fluid" style="max-height: 80vh; width: 100%; object-fit: contain;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle image preview modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const imagePreviewModal = document.getElementById('imagePreviewModal');
+            if (imagePreviewModal) {
+                imagePreviewModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const imageUrl = button.getAttribute('data-image-url');
+                    const imageAlt = button.getAttribute('data-image-alt') || 'Image';
+                    const previewImage = document.getElementById('previewImage');
+                    if (previewImage) {
+                        previewImage.src = imageUrl;
+                        previewImage.alt = imageAlt;
+                    }
+                });
+            }
         });
     </script>
 @endsection

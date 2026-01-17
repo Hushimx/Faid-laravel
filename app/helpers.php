@@ -97,6 +97,11 @@ if (!function_exists('uploadImage')) {
                 Storage::disk($disk)->delete($oldFile);
             }
 
+            // Ensure directory exists
+            if (!Storage::disk($disk)->exists($path)) {
+                Storage::disk($disk)->makeDirectory($path);
+            }
+
             // Generate unique filename
             $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
 
@@ -104,25 +109,50 @@ if (!function_exists('uploadImage')) {
             $image = Image::make($file);
 
             // Resize if dimensions provided
-            if (!empty($dimensions)) {
-                $image->resize($dimensions['width'] ?? null, $dimensions['height'] ?? null, function ($constraint) {
+            if (!empty($dimensions) && isset($dimensions['width']) && isset($dimensions['height'])) {
+                $width = $dimensions['width'];
+                $height = $dimensions['height'];
+                
+                // Resize to fit within dimensions while maintaining aspect ratio
+                $image->fit($width, $height, function ($constraint) {
                     $constraint->aspectRatio();
                     $constraint->upsize();
                 });
+            } elseif (!empty($dimensions)) {
+                // If only width or height is provided, use resize
+                if (isset($dimensions['width']) || isset($dimensions['height'])) {
+                    $image->resize($dimensions['width'] ?? null, $dimensions['height'] ?? null, function ($constraint) {
+                        $constraint->aspectRatio();
+                        $constraint->upsize();
+                    });
+                }
             }
 
             // Store the image
             $filePath = $path . '/' . $filename;
-            Storage::disk($disk)->put($filePath, $image->encode());
+            
+            // Get the file extension to determine encoding format
+            $extension = strtolower($file->getClientOriginalExtension());
+            $format = in_array($extension, ['jpg', 'jpeg']) ? 'jpg' : ($extension === 'png' ? 'png' : 'jpg');
+            
+            // Encode and save
+            $encoded = $image->encode($format, 90); // 90% quality
+            $saved = Storage::disk($disk)->put($filePath, $encoded);
+
+            if (!$saved) {
+                throw new \Exception('Failed to save image to storage');
+            }
 
             return $filePath;
         } catch (\Exception $e) {
             Log::error('Image upload failed: ' . $e->getMessage(), [
                 'exception' => $e,
+                'trace' => $e->getTraceAsString(),
                 'file' => $file->getClientOriginalName() ?? 'unknown',
                 'mime_type' => $file->getMimeType() ?? 'unknown',
                 'size' => $file->getSize() ?? 0,
                 'is_valid' => $file->isValid(),
+                'path' => $path ?? 'unknown',
             ]);
             return null;
         }

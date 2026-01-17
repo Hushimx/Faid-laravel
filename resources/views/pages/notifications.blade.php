@@ -75,13 +75,15 @@
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-header pb-0">
-                    <div class="d-flex justify-content-between">
-                        <h4 class="card-title mg-b-0">{{ __('dashboard.Notification History') }}</h4>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title mg-b-0 mb-1">{{ __('dashboard.Notification History') }}</h4>
+                            <p class="tx-12 tx-gray-500 mb-0">{{ __('dashboard.Manage all notifications') }}</p>
+                        </div>
                         <a href="{{ route('notifications.create') }}" class="btn btn-primary">
                             <i class="fe fe-plus me-2"></i>{{ __('dashboard.Send Notification') }}
                         </a>
                     </div>
-                    <p class="tx-12 tx-gray-500 mb-2">{{ __('dashboard.Manage all notifications') }}</p>
                 </div>
                 <div class="card-body">
                     <!-- Filters -->

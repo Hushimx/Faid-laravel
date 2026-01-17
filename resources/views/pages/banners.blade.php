@@ -133,16 +133,21 @@
                                     {{ $loop->iteration + ($banners->currentPage() - 1) * $banners->perPage() }}
                                 </td>
                                 <td>
-                                    <div class="avatar avatar-md rounded-3 overflow-hidden">
-                                        @if ($banner->image)
-                                            <img src="{{ Storage::url($banner->image) }}" alt="Banner"
-                                                class="img-fluid" style="width: 100px; height: 60px; object-fit: cover;">
-                                        @else
-                                            <span class="avatar-initial bg-light text-muted fw-semibold">
+                                    @if ($banner->image)
+                                        <div class="overflow-hidden shadow-sm" style="width: 150px; height: 90px; cursor: pointer;"
+                                            data-bs-toggle="modal" data-bs-target="#imagePreviewModal"
+                                            data-image-url="{{ asset('storage/' . $banner->image) }}"
+                                            data-image-alt="Banner">
+                                            <img src="{{ asset('storage/' . $banner->image) }}" alt="Banner"
+                                                class="img-fluid w-100 h-100" style="object-fit: cover;">
+                                        </div>
+                                    @else
+                                        <div class="d-flex align-items-center justify-content-center bg-light" style="width: 150px; height: 90px;">
+                                            <span class="text-muted">
                                                 <i class="fe fe-image"></i>
                                             </span>
-                                        @endif
-                                    </div>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td>
                                     @if ($banner->link)
@@ -235,12 +240,11 @@
                                                         @lang('dashboard.Image')
                                                     </label>
                                                     <div class="border rounded-3 p-3 text-center">
-                                                        <div
-                                                            class="d-inline-block rounded-3 overflow-hidden shadow-sm mb-3">
-                                                            <img src="{{ $banner->image ? Storage::url($banner->image) : asset('assets/images/media/36.png') }}"
+                                                        <div class="rounded overflow-hidden shadow-sm mb-3" style="max-width: 100%;">
+                                                            <img src="{{ $banner->image ? asset('storage/' . $banner->image) : asset('assets/images/media/36.png') }}"
                                                                 alt="@lang('dashboard.Image')"
-                                                                class="img-fluid object-fit-cover js-image-preview"
-                                                                style="height: 180px;"
+                                                                class="img-fluid js-image-preview"
+                                                                style="width: 100%; max-height: 300px; object-fit: contain;"
                                                                 id="edit-preview-{{ $banner->id }}">
                                                         </div>
                                                         <input class="form-control js-image-input" type="file"
@@ -279,10 +283,12 @@
                                             @csrf
                                             @method('DELETE')
                                             <div class="modal-body">
-                                                <p class="mb-1">@lang('dashboard.Banner delete confirmation')</p>
+                                                <p class="mb-3">@lang('dashboard.Banner delete confirmation')</p>
                                                 @if ($banner->image)
-                                                    <img src="{{ Storage::url($banner->image) }}" alt="Banner"
-                                                        class="img-fluid rounded mb-2" style="max-height: 150px;">
+                                                    <div class="text-center mb-3">
+                                                        <img src="{{ asset('storage/' . $banner->image) }}" alt="Banner"
+                                                            class="img-fluid rounded shadow-sm" style="max-width: 100%; max-height: 300px; object-fit: contain;">
+                                                    </div>
                                                 @endif
                                             </div>
                                             <div class="modal-footer">
@@ -372,13 +378,17 @@
                                 @lang('dashboard.Image') <span class="text-danger">*</span>
                             </label>
                             <div class="border rounded-3 p-3 text-center">
-                                <div class="d-inline-block rounded-3 overflow-hidden shadow-sm mb-3">
+                                <div class="rounded overflow-hidden shadow-sm mb-3" style="max-width: 100%;">
                                     <img src="{{ asset('assets/images/media/36.png') }}" alt="@lang('dashboard.Image')"
-                                        class="img-fluid object-fit-cover js-image-preview" style="height: 180px;"
+                                        class="img-fluid js-image-preview"
+                                        style="width: 100%; max-height: 300px; object-fit: contain;"
                                         id="create-preview">
                                 </div>
-                                <input class="form-control js-image-input" type="file" id="create-image"
+                                <input class="form-control js-image-input @error('image') is-invalid @enderror" type="file" id="create-image"
                                     name="image" accept="image/*" data-preview="#create-preview" required>
+                                @error('image')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                                 <small class="text-muted d-block mt-2">@lang('dashboard.Image helper')</small>
                             </div>
                         </div>
@@ -397,6 +407,15 @@
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
         <script>
+            // Reopen modal if there are validation errors
+            @if ($errors->hasAny(['image', 'status', 'link', 'order']))
+                $(document).ready(function() {
+                    setTimeout(function() {
+                        $('#createBannerModal').modal('show');
+                    }, 100);
+                });
+            @endif
+
             document.addEventListener('DOMContentLoaded', function() {
                 // Image preview functionality
                 document.querySelectorAll('.js-image-input').forEach(input => {
@@ -504,4 +523,38 @@
             }
         </style>
     @endpush
+
+    <!-- Image Preview Modal -->
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imagePreviewModalLabel">@lang('dashboard.Image Preview')</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-0">
+                    <img id="previewImage" src="" alt="" class="img-fluid" style="max-height: 80vh; width: 100%; object-fit: contain;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle image preview modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const imagePreviewModal = document.getElementById('imagePreviewModal');
+            if (imagePreviewModal) {
+                imagePreviewModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const imageUrl = button.getAttribute('data-image-url');
+                    const imageAlt = button.getAttribute('data-image-alt') || 'Image';
+                    const previewImage = document.getElementById('previewImage');
+                    if (previewImage) {
+                        previewImage.src = imageUrl;
+                        previewImage.alt = imageAlt;
+                    }
+                });
+            }
+        });
+    </script>
 @endsection

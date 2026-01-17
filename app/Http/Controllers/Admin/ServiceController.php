@@ -86,7 +86,7 @@ class ServiceController extends Controller
   {
     $this->authorize('services.view');
 
-    $service->load(['category', 'vendor', 'images', 'videos', 'reviews.user', 'faqs']);
+    $service->load(['category', 'vendor', 'city.country', 'images', 'videos', 'reviews.user', 'faqs']);
     return view('pages.services-show', compact('service'));
   }
 

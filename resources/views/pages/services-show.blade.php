@@ -10,7 +10,7 @@
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h4 class="card-title mb-0">@lang('dashboard.Service Details')</h4>
+            <h4 class="card-title mb-0">@lang('dashboard.Service')</h4>
             <div>
                 @can('services.edit')
                     <a href="{{ route('services.edit', $service) }}" class="btn btn-primary">
@@ -59,10 +59,12 @@
                             <tr>
                                 <th class="bg-light">@lang('dashboard.Price')</th>
                                 <td>
-                                    @if ($service->price)
-                                        {{ number_format($service->price, 2) }} @lang('dashboard.Currency')
+                                    @if ($service->price_type === 'fixed' && $service->price)
+                                        <strong class="text-primary">{{ number_format($service->price, 2) }} @lang('dashboard.Currency')</strong>
+                                    @elseif ($service->price_type === 'negotiable')
+                                        <span class="badge bg-info-transparent text-info">@lang('dashboard.Negotiable')</span>
                                     @else
-                                        @lang('dashboard.Negotiable')
+                                        -
                                     @endif
                                 </td>
                             </tr>
@@ -72,7 +74,16 @@
                             </tr>
                             <tr>
                                 <th class="bg-light">@lang('dashboard.City')</th>
-                                <td>{{ $service->city ?? '-' }}</td>
+                                <td>
+                                    @if ($service->city)
+                                        {{ $service->city->name }}
+                                        @if ($service->city->country)
+                                            <span class="text-muted">({{ $service->city->country->name }})</span>
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                             </tr>
                             <tr>
                                 <th class="bg-light">@lang('dashboard.Status')</th>
@@ -111,7 +122,7 @@
                             </tr>
                             <tr>
                                 <th class="bg-light">@lang('dashboard.Updated At')</th>
-                                <td>{{ $service->updated_at->format('Y-m-d H:i:s') }}</td>
+                                <td>{{ $service->updated_at ? $service->updated_at->format('Y-m-d H:i:s') : '-' }}</td>
                             </tr>
                         </table>
                     </div>
@@ -123,15 +134,15 @@
                             <div class="row g-2">
                                 @foreach ($service->images as $image)
                                     <div class="col-6">
-                                        <div class="border rounded p-2">
+                                        <div class="border p-2">
                                             <img src="{{ url(Storage::url($image->path)) }}" alt="Image"
-                                                class="img-fluid rounded">
+                                                class="img-fluid">
                                         </div>
                                     </div>
                                 @endforeach
                                 @foreach ($service->videos as $video)
                                     <div class="col-12">
-                                        <div class="border rounded p-2">
+                                        <div class="border p-2">
                                             <video controls class="w-100" style="max-height: 200px;">
                                                 <source src="{{ url(Storage::url($video->path)) }}"
                                                     type="{{ $video->mime_type }}">
@@ -151,27 +162,23 @@
 
 
     <div class="card shadow-sm border-0">
-        <div class="card-header">
-            <tr>
-                <th class="bg-light">@lang('dashboard.Rating')</th>
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-warning-transparent text-warning fs-6">
-                            @if ($service->averageRating())
-                                {{ number_format($service->averageRating(), 1) }}
-                                <i class="fe fe-star-fill ms-1"></i>
-                            @else
-                                @lang('dashboard.No ratings yet')
-                            @endif
-                        </span>
-                        <small class="text-muted">
-                            @if ($service->reviewsCount() > 0)
-                                ({{ $service->reviewsCount() }} @lang('dashboard.review' . ($service->reviewsCount() > 1 ? 's' : '')))
-                            @endif
-                        </small>
-                    </div>
-                </td>
-            </tr>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">@lang('dashboard.Rating')</h5>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-warning-transparent text-warning fs-6">
+                    @if ($service->averageRating())
+                        {{ number_format($service->averageRating(), 1) }}
+                        <i class="fe fe-star-fill ms-1"></i>
+                    @else
+                        @lang('dashboard.No ratings yet')
+                    @endif
+                </span>
+                <small class="text-muted">
+                    @if ($service->reviewsCount() > 0)
+                        ({{ $service->reviewsCount() }} @lang('dashboard.review' . ($service->reviewsCount() > 1 ? 's' : '')))
+                    @endif
+                </small>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -186,7 +193,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($service->reviews as $review)
+                        @forelse ($service->reviews as $review)
                             <tr>
                                 <td>
                                     <span class="badge bg-warning-transparent text-warning fs-6">
@@ -194,8 +201,8 @@
                                         <i class="fe fe-star-fill ms-1"></i>
                                     </span>
                                 </td>
-                                <td>{{ $review->comment }}</td>
-                                <td>{{ $review->user->name }}</td>
+                                <td>{{ $review->comment ?? '-' }}</td>
+                                <td>{{ $review->user->name ?? '-' }}</td>
                                 <td>{{ $review->created_at->format('Y-m-d H:i:s') }}</td>
                                 <td>
                                     <form
@@ -209,13 +216,19 @@
                                             </button>
                                         @endcan
                                     </form>
+                                </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <p class="text-muted mb-0">@lang('dashboard.No ratings yet')</p>
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
     </div>
 
     {{-- FAQs Section --}}
@@ -250,28 +263,4 @@
         </div>
     @endif
 
-    {{-- @section('scripts')
-    <script>
-        // Initialize the map
-
-    <tr>
-            <th class="bg-light">@lang('dashboard.Rating')</th>
-            <td>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-warning-transparent text-warning fs-6">
-                        @if ($service->averageRating())
-                            {{ number_format($service->averageRating(), 1) }}
-                            <i class="fe fe-star-fill ms-1"></i>
-                        @else
-                            @lang('dashboard.No ratings yet')
-                        @endif
-                    </span>
-                    <small class="text-muted">
-                        @if ($service->reviewsCount() > 0)
-                            ({{ $service->reviewsCount() }} @lang('dashboard.review' . ($service->reviewsCount() > 1 ? 's' : '')))
-                        @endif
-                    </small>
-                </div>
-            </td>
-        </tr> --}}
 @endsection

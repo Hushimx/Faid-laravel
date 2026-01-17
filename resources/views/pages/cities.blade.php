@@ -55,29 +55,70 @@
                                             @csrf
                                             @method('PUT')
                                             <div class="modal-body">
-                                                @foreach (locales() as $locale)
+                                                @php
+                                                    $availableLocales = locales();
+                                                    // Ensure at least 'en' is always present
+                                                    $defaultLocales = [
+                                                        (object)['code' => 'en', 'name' => 'English'],
+                                                        (object)['code' => 'ar', 'name' => 'Arabic']
+                                                    ];
+                                                    
+                                                    if (empty($availableLocales)) {
+                                                        $availableLocales = $defaultLocales;
+                                                    } else {
+                                                        // Ensure 'en' exists in the locales
+                                                        $hasEn = false;
+                                                        foreach ($availableLocales as $locale) {
+                                                            $code = is_object($locale) ? $locale->code : ($locale['code'] ?? null);
+                                                            if ($code === 'en') {
+                                                                $hasEn = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                        if (!$hasEn) {
+                                                            array_unshift($availableLocales, (object)['code' => 'en', 'name' => 'English']);
+                                                        }
+                                                    }
+                                                @endphp
+                                                @foreach ($availableLocales as $locale)
+                                                    @php
+                                                        $localeCode = is_object($locale) ? $locale->code : ($locale['code'] ?? '');
+                                                        $localeName = is_object($locale) ? $locale->name : ($locale['name'] ?? strtoupper($localeCode));
+                                                    @endphp
                                                     <div class="form-group">
-                                                        <label for="name-{{ $locale->code }}">@lang('dashboard.Name') (
-                                                            {{ strtoupper($locale->name) }}
+                                                        <label for="name-{{ $localeCode }}">@lang('dashboard.Name') (
+                                                            {{ strtoupper($localeName) }}
                                                             )</label>
-                                                        <input type="text" name="name[{{ $locale->code }}]"
-                                                            class="form-control" id="name-{{ $locale->code }}"
-                                                            placeholder="@lang('dashboard.Name') ( {{ strtoupper($locale->name) }} )"
-                                                            value="{{ $city->getTranslation('name', $locale->code) }}"
-                                                            {{ $loop->first ? 'required' : '' }}>
+                                                        <input type="text" name="name[{{ $localeCode }}]"
+                                                            class="form-control @error('name.' . $localeCode) is-invalid @enderror" id="name-{{ $localeCode }}"
+                                                            placeholder="@lang('dashboard.Name') ( {{ strtoupper($localeName) }} )"
+                                                            value="{{ old('name.' . $localeCode, $city->getTranslation('name', $localeCode)) }}"
+                                                            {{ $localeCode === 'en' ? 'required' : '' }}>
+                                                        @error('name.' . $localeCode)
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
                                                     </div>
                                                 @endforeach
+                                                @error('name')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
+                                                @error('name.en')
+                                                    <div class="alert alert-danger">{{ $message }}</div>
+                                                @enderror
                                                 <div class="form-group">
                                                     <label for="country_id">@lang('dashboard.Country')</label>
-                                                    <select name="country_id" class="form-control" id="country_id" required>
+                                                    <select name="country_id" class="form-control @error('country_id') is-invalid @enderror" id="country_id" required>
                                                         <option value="">@lang('dashboard.Select Country')</option>
                                                         @foreach ($countries as $country)
                                                             <option value="{{ $country->id }}"
-                                                                {{ $city->country_id == $country->id ? 'selected' : '' }}>
+                                                                {{ old('country_id', $city->country_id) == $country->id ? 'selected' : '' }}>
                                                                 {{ $country->name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
+                                                    @error('country_id')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
@@ -148,24 +189,66 @@
                 <form action="{{ route('cities.store') }}" method="POST">
                     @csrf
                     <div class="modal-body">
-                        @foreach (locales() as $locale)
+                        @php
+                            $availableLocales = locales();
+                            // Ensure at least 'en' is always present
+                            $defaultLocales = [
+                                (object)['code' => 'en', 'name' => 'English'],
+                                (object)['code' => 'ar', 'name' => 'Arabic']
+                            ];
+                            
+                            if (empty($availableLocales)) {
+                                $availableLocales = $defaultLocales;
+                            } else {
+                                // Ensure 'en' exists in the locales
+                                $hasEn = false;
+                                foreach ($availableLocales as $locale) {
+                                    $code = is_object($locale) ? $locale->code : ($locale['code'] ?? null);
+                                    if ($code === 'en') {
+                                        $hasEn = true;
+                                        break;
+                                    }
+                                }
+                                if (!$hasEn) {
+                                    array_unshift($availableLocales, (object)['code' => 'en', 'name' => 'English']);
+                                }
+                            }
+                        @endphp
+                        @foreach ($availableLocales as $locale)
+                            @php
+                                $localeCode = is_object($locale) ? $locale->code : ($locale['code'] ?? '');
+                                $localeName = is_object($locale) ? $locale->name : ($locale['name'] ?? strtoupper($localeCode));
+                            @endphp
                             <div class="form-group">
-                                <label for="name-{{ $locale->code }}">@lang('dashboard.Name') ( {{ strtoupper($locale->name) }}
+                                <label for="name-{{ $localeCode }}">@lang('dashboard.Name') ( {{ strtoupper($localeName) }}
                                     )</label>
-                                <input type="text" name="name[{{ $locale->code }}]" class="form-control"
-                                    id="name-{{ $locale->code }}"
-                                    placeholder="@lang('dashboard.Name') ( {{ strtoupper($locale->name) }} )"
-                                    {{ $loop->first ? 'required' : '' }}>
+                                <input type="text" name="name[{{ $localeCode }}]" class="form-control @error('name.' . $localeCode) is-invalid @enderror"
+                                    id="name-{{ $localeCode }}"
+                                    placeholder="@lang('dashboard.Name') ( {{ strtoupper($localeName) }} )"
+                                    value="{{ old('name.' . $localeCode) }}"
+                                    {{ $localeCode === 'en' ? 'required' : '' }}>
+                                @error('name.' . $localeCode)
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         @endforeach
+                        @error('name')
+                            <div class="alert alert-danger">{{ $message }}</div>
+                        @enderror
+                        @error('name.en')
+                            <div class="alert alert-danger">{{ $message }}</div>
+                        @enderror
                         <div class="form-group">
                             <label for="country_id">@lang('dashboard.Country')</label>
-                            <select name="country_id" class="form-control" id="country_id" required>
+                            <select name="country_id" class="form-control @error('country_id') is-invalid @enderror" id="country_id" required>
                                 <option value="">@lang('dashboard.Select Country')</option>
                                 @foreach ($countries as $country)
-                                    <option value="{{ $country->id }}">{{ $country->name }}</option>
+                                    <option value="{{ $country->id }}" {{ old('country_id') == $country->id ? 'selected' : '' }}>{{ $country->name }}</option>
                                 @endforeach
                             </select>
+                            @error('country_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -178,3 +261,17 @@
     </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    // Reopen modal if there are validation errors
+    @if ($errors->hasAny(['name', 'name.en', 'country_id']))
+        $(document).ready(function() {
+            // Use setTimeout to ensure Bootstrap is fully loaded
+            setTimeout(function() {
+                $('#createModal').modal('show');
+            }, 100);
+        });
+    @endif
+</script>
+@endpush

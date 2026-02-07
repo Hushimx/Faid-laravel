@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Spatie\Translatable\HasTranslations;
 
@@ -102,6 +103,14 @@ class Service extends Model
         return $this->hasMany(ServiceFaq::class)->orderBy('order')->orderBy('id');
     }
 
+    /**
+     * Users who favorited this service.
+     */
+    public function favoritedByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'service_favorites')
+            ->withTimestamps();
+    }
 
     /**
      * Average rating (float) for the service.

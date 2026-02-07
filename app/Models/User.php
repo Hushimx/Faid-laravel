@@ -162,4 +162,13 @@ class User extends Authenticatable
     {
         return $this->hasOne(VendorApplication::class);
     }
+
+    /**
+     * Services favorited by the user.
+     */
+    public function favoriteServices()
+    {
+        return $this->belongsToMany(Service::class, 'service_favorites')
+            ->withTimestamps();
+    }
 }

@@ -32,7 +32,7 @@ class SendOtp extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: __('dashboard.OTP Verification Code'),
+            subject: 'رمز التحقق - ' . config('app.name'),
         );
     }
 

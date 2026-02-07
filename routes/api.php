@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ServiceController;
+use App\Http\Controllers\Api\ServiceFavoriteController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\TicketMessageController;
@@ -19,8 +20,8 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('register', 'register');
     Route::post('login', 'login');
 
-    // OTP routes - limit to 1 request per minute
-    Route::post('send-otp', 'sendOtp')->middleware('throttle:1,1');
+    // OTP routes - 3 per minute to allow initial send + resend/retry
+    Route::post('send-otp', 'sendOtp')->middleware('throttle:3,1');
     Route::post('verify-otp', 'verifyOtp');
     Route::post('reset-password', 'resetPassword');
 
@@ -70,6 +71,13 @@ Route::controller(ServiceController::class)->group(function () {
         Route::post('services/{service}/update', 'update'); // Use POST for updates to handle form-data
         Route::delete('services/{service}', 'destroy');
     });
+});
+
+// Favorites (authenticated users)
+Route::middleware(['auth:sanctum', 'ensure-verified-user'])->controller(ServiceFavoriteController::class)->group(function () {
+    Route::get('favorites', 'index');
+    Route::post('services/{service}/favorite', 'store');
+    Route::delete('services/{service}/favorite', 'destroy');
 });
 
 // Products Routes

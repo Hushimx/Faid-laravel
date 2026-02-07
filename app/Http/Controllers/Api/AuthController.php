@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Propaganistas\LaravelPhone\Rules\Phone;
 
@@ -281,7 +280,7 @@ class AuthController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
-            'phone' => ['required', 'string', 'max:20', new Phone],
+            'phone' => ['nullable', 'string', 'max:20', Rule::when($request->filled('phone'), [new Phone])],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^[a-zA-Z0-9]+$/'],
             'type' => ['nullable', 'string', Rule::in(['user', 'vendor'])],
             'fcm_token' => ['nullable', 'string'],
@@ -303,24 +302,27 @@ class AuthController extends Controller
 
         $validated = $request->validate($rules);
 
-        // Normalize phone number (remove leading +)
-        $phone = ltrim($validated['phone'], '+');
+        // Normalize phone number (remove leading +); allow null for email-only OTP flow
+        $phone = isset($validated['phone']) && $validated['phone'] !== '' && $validated['phone'] !== null
+            ? ltrim($validated['phone'], '+')
+            : null;
         $validated['phone'] = $phone;
 
         // Check if email or phone already exists in database
         $emailExists = User::where('email', $validated['email'])->exists();
-        $phoneExists = User::where('phone', $phone)->exists();
-
         if ($emailExists) {
             return ApiResponse::error('Email already taken', [
                 'email' => ['The email has already been taken.']
             ], 422);
         }
 
-        if ($phoneExists) {
-            return ApiResponse::error('Phone number already taken', [
-                'phone' => ['The phone number has already been taken.']
-            ], 422);
+        if ($phone !== null) {
+            $phoneExists = User::where('phone', $phone)->exists();
+            if ($phoneExists) {
+                return ApiResponse::error('Phone number already taken', [
+                    'phone' => ['The phone number has already been taken.']
+                ], 422);
+            }
         }
 
         $vendorProfileData = $validated['vendor_profile'] ?? [];
@@ -355,7 +357,9 @@ class AuthController extends Controller
         $validated['password'] = Hash::make($validated['password']);
 
         // Store registration data in cache temporarily (expires in 15 minutes)
-        $cacheKey = 'pending_registration_' . $validated['phone'];
+        // Key by email so sendOtp/verifyOtp can find pending registration by email
+        $emailNormalized = strtolower($validated['email']);
+        $cacheKey = 'pending_registration_' . $emailNormalized;
         $registrationData = [
             'user_data' => $validated,
             'vendor_profile' => $vendorProfileData,
@@ -367,10 +371,10 @@ class AuthController extends Controller
         Cache::put($cacheKey, $registrationData, now()->addMinutes(15));
 
         // Return success immediately - OTP will be sent by the frontend via sendOtp endpoint
-        // This prevents the registration from hanging on slow WhatsApp API responses
         return ApiResponse::success(
             [
-                'phone' => $validated['phone'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? null,
                 'message' => 'Registration data stored. Please verify OTP to complete registration.'
             ],
             'Registration initiated. Please verify OTP.',
@@ -381,22 +385,21 @@ class AuthController extends Controller
     public function sendOtp(Request $request)
     {
         $request->validate([
-            'phone' => ['required', 'string', 'max:255', new Phone],
+            'email' => ['required', 'string', 'email', 'max:255'],
         ]);
 
-        $phone = ltrim($request->phone, '+');
-        $request->merge(['phone' => $phone]);
+        $email = strtolower($request->email);
 
         // Check if user exists
-        $user = User::where('phone', $phone)->first();
-        
-        // Check if there's a pending registration
-        $cacheKey = 'pending_registration_' . $phone;
+        $user = User::where('email', $email)->first();
+
+        // Check if there's a pending registration (keyed by email)
+        $cacheKey = 'pending_registration_' . $email;
         $pendingRegistration = Cache::get($cacheKey);
 
         // If neither user exists nor pending registration, return error
         if (!$user && !$pendingRegistration) {
-            return ApiResponse::error('Phone number not found. Please register first.', [], 404);
+            return ApiResponse::error('Email not found. Please register first.', [], 404);
         }
 
         $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -413,27 +416,20 @@ class AuthController extends Controller
             Cache::put($cacheKey, $pendingRegistration, now()->addMinutes(15));
         }
 
-        // Send OTP via WhatsApp with timeout to prevent hanging
-        $data = [
-            'number' => $phone,
-            'type' => 'text',
-            'message' => 'رمز التحقق الخاص بك هو: ' . $otp,
-            'instance_id' => config('services.whatsapp.instance_id'),
-            'access_token' => config('services.whatsapp.access_token'),
-        ];
+        // Build User-like object for SendOtp mailable (existing user or dummy for pending)
+        $userForMail = $user;
+        if (!$userForMail && $pendingRegistration) {
+            $userData = $pendingRegistration['user_data'] ?? [];
+            $userForMail = new User();
+            $userForMail->email = $userData['email'] ?? $email;
+            $userForMail->first_name = $userData['first_name'] ?? '';
+            $userForMail->last_name = $userData['last_name'] ?? null;
+        }
 
         try {
-            $response = Http::timeout(10)->post(config('services.whatsapp.api_url'), $data);
-            $json_response = $response->json();
-
-            if (isset($json_response['status']) && $json_response['status'] != 'success') {
-                return ApiResponse::error('Failed to send OTP', [], 500);
-            }
+            Mail::to($email)->send(new SendOtp($userForMail, $otp));
         } catch (\Exception $e) {
-            // Log the error but still return success if OTP is stored
             report($e);
-            // If OTP is stored in cache/DB, we can still return success
-            // User can request a new OTP if needed
             if ($user || $pendingRegistration) {
                 return ApiResponse::success([], 'OTP generated. If you did not receive it, please request a new one.');
             }
@@ -446,16 +442,16 @@ class AuthController extends Controller
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'phone' => ['required', 'string', 'max:255', new Phone],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'otp' => ['required', 'string', 'max:6'],
             'type' => 'required|string|in:verification,password_reset',
         ]);
 
-        $phone = ltrim($request->phone, '+');
-        $user = User::where('phone', $phone)->first();
-        
-        // Check for pending registration
-        $cacheKey = 'pending_registration_' . $phone;
+        $email = strtolower($request->email);
+        $user = User::where('email', $email)->first();
+
+        // Check for pending registration (keyed by email)
+        $cacheKey = 'pending_registration_' . $email;
         $pendingRegistration = Cache::get($cacheKey);
 
         // Handle pending registration (new user registration)
@@ -554,33 +550,10 @@ class AuthController extends Controller
             $user->otp_expires_at = now()->addMinutes(10);
             $user->save();
 
-            // Send the new OTP via WhatsApp for password reset
-            $data = [
-                'number' => $phone,
-                'type' => 'text',
-                'message' => 'رمز التحقق لإعادة تعيين كلمة المرور هو: ' . $otp,
-                'instance_id' => config('services.whatsapp.instance_id'),
-                'access_token' => config('services.whatsapp.access_token'),
-            ];
-
             try {
-                $response = Http::timeout(10)->post(config('services.whatsapp.api_url'), $data);
-                $json_response = $response->json();
-
-                if (isset($json_response['status']) && $json_response['status'] != 'success') {
-                    // Log the error but still return success since OTP is saved
-                    Log::error('Failed to send password reset OTP via WhatsApp', [
-                        'phone' => $phone,
-                        'response' => $json_response,
-                    ]);
-                }
+                Mail::to($user->email)->send(new SendOtp($user, $otp));
             } catch (\Exception $e) {
-                // Log the error but still return success since OTP is saved
                 report($e);
-                Log::error('Exception while sending password reset OTP via WhatsApp', [
-                    'phone' => $phone,
-                    'error' => $e->getMessage(),
-                ]);
             }
 
             return ApiResponse::success([
@@ -598,16 +571,15 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'phone' => ['required', 'string', 'max:255', new Phone],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^[a-zA-Z0-9]+$/'],
             'otp' => ['required', 'string', 'size:6'],
         ]);
 
-        // Normalize phone number (remove leading +) - same as other endpoints
-        $phone = ltrim($request->phone, '+');
-        
-        // Check if user exists with normalized phone
-        $user = User::where('phone', $phone)->first();
+        $email = strtolower($request->email);
+
+        // Check if user exists by email
+        $user = User::where('email', $email)->first();
 
         if (!$user) {
             return ApiResponse::error('User not found', [], 404);

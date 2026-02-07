@@ -17,15 +17,18 @@ class ServiceResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'title' => $this->title,
-            'description' => $this->description,
+            'title' => $this->getTranslations('title') ?: ['ar' => '', 'en' => ''],
+            'description' => $this->getTranslations('description') ?: ['ar' => '', 'en' => ''],
             'price_type' => $this->price_type,
             'price' => $this->price ? (float) $this->price : null,
-            'address' => $this->address,
+            'address' => $this->getTranslations('address') ?: ['ar' => '', 'en' => ''],
             'city' => $this?->city?->name,
             'status' => $this->status,
             'admin_status' => $this->admin_status,
             'is_visible' => $this->isVisible(),
+            'is_favorited' => $request->user()
+                ? $this->resource->favoritedByUsers()->where('users.id', $request->user()->id)->exists()
+                : false,
             'attributes' => $this->attributes ?? [],
             'lat' => $this->lat ? (float) $this->lat : null,
             'lng' => $this->lng ? (float) $this->lng : null,
